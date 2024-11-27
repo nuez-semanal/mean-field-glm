@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "logisticmeanfield"
+version = "0.1.0"
+description = ""
+authors = ["nuez-semanal <saenz.manuel@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.12,<3.13"
+numpy = "^1.23"  # Compatible with pytensor and pymc
+pymc = "^5.18.2"
+matplotlib = "^3.9.2"
+ipython = "^8.29.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
