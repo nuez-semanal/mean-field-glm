@@ -95,7 +95,7 @@ graph_creator = MseGraphCreator(
 graph_creator.plot_graph_MSE(save = True)
 ```
 
-### Project Structure
+## Project Structure
 
 ```
 .
