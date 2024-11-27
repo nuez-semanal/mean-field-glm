@@ -2,43 +2,129 @@ import numpy as np
 from matplotlib import pyplot as plt
 from block_computation import BlockComputation
 
-class ComputeMseGraph(BlockComputation):
-    def __init__(self,kappa_list = [1.0], num_per_kappa = 5, delta = 1.0, snr = 1.0,
-                 prior = "Normal", signal = "Normal"):
-        super().__init__(kappa_list, num_per_kappa, delta, snr, prior, signal)
+class MseGraphCreator(BlockComputation):
+    """
+    ComputeMseGraph computes graphs derived from the MeanFieldGLM class.
 
-    def plot_graph_mse(self,save=False):
-        self.compute_data()
-        self.save_data()
+    This class allows for computing and analyzing various statistics and visualizations based on different
+    configurations of MeanFieldGLM models.
 
-        n_kappa = len(self.kappa_list)
-        stats = np.zeros((n_kappa,5))
+    Parameters
+    ----------
+    var_list : list, optional
+        List of values for the variable of interest (e.g., kappa, snr). Default is [1.0].
+    variable : str, optional
+        Name of the variable being varied (e.g., "kappa", "snr"). Default is "kappa".
+    num_per_var : int, optional
+        Number of samples per variable value. Default is 5.
+    delta : float, optional
+        Smooth approximation parameter for logistic regression. Default is 1.0.
+    fixed_var : float, optional
+        Fixed value for the variable that is not varied. Default is 1.0.
+    prior : str, optional
+        Prior distribution for the MeanFieldGLM model. Must be "Normal" or "Beta". Default is "Normal".
+    signal : str, optional
+        Signal distribution for the MeanFieldGLM model. Must be "Normal", "Rademacher", or "Beta". Default is "Normal".
+    save : bool, optional
+        If True, saves the computed statistics or graphs. Default is True.
+    bayes_optimal : bool, optional
+        If True, assumes the MeanFieldGLM model is Bayes optimal. Default is False.
 
-        for i in range(n_kappa):
-            block_data = self.data[i*self.num_per_kappa:(i+1)*self.num_per_kappa,:]
-            stats[i,0] = 1/block_data[0,0]
-            stats[i,1] = np.mean(block_data[:,2])
-            stats[i,2] = np.std(block_data[:,2])
-            stats[i,3] = np.mean(block_data[:,3])
-            stats[i,4] = np.std(block_data[:,3])
+    Attributes
+    ----------
+    stats : object
+        Stores computed statistics or graph data.
+    data : NoneType
+        Placeholder for any required data storage.
 
-        x = stats[:,0]
-        y = 1 + stats[:,1] - 2 * stats[:,3]
+    Notes
+    -----
+    - The `ComputeMseGraph` class is designed to work in conjunction with the `MeanFieldGLM`.
+    - The `compute_stats()` and `plot_graph_MSE()` methods are implemented separately to perform specific
+      computations and generate visual outputs based on the specified parameters.
 
-        x_error = np.zeros_like(x)
-        y_error = stats[:,2] + 2 * stats[:,4]
+    """
+    def __init__(self, var_list= (0.1,1.0), init_params = (1.0,0.0,0.0,1e-6,0.0,0.0), variable="kappa", num_per_var=5,
+                 delta=1.0, fixed_var=1.0, prior="Normal", signal="Normal", tolerance = 0.01, max_it = 7,
+                 log_likelihood = "Logistic", save=True, bayes_optimal=False):
+        super().__init__(var_list=var_list, init_params=init_params, variable=variable,
+                         num_per_var=num_per_var,delta=delta, fixed_var=fixed_var, prior=prior,
+                         signal=signal, tolerance=tolerance, max_it=max_it, log_likelihood=log_likelihood,
+                         save=save, bayes_optimal=bayes_optimal)
 
+        self.stats = None
+
+    def compute_stats(self):
+        """
+        Computes statistics from the computed data.
+
+        If self.stats is already computed, it does nothing (to avoid recomputation).
+
+        Computes:
+        - Mean and standard deviation of critical quantities (columns 2 and 3) for each kappa value.
+        """
+        if self.stats is None:
+            n_kappa = len(self.var_list)
+            self.stats = np.zeros((n_kappa, 6))
+
+            for i in range(n_kappa):
+                block_data = self.data[i * self.num_per_var:(i + 1) * self.num_per_var, :]
+                self.stats[i, 0] = block_data[0, 0]  # kappa value
+                self.stats[i, 1] = np.mean(block_data[:, 2])  # mean of column 2 (cB)
+                self.stats[i, 2] = np.std(block_data[:, 2])  # std deviation of column 2
+                self.stats[i, 3] = np.mean(block_data[:, 3])  # mean of column 3 (cBBs)
+                self.stats[i, 4] = np.std(block_data[:, 3])  # std deviation of column 3
+        else:
+            pass  # stats already computed, do nothing
+
+    def plot_graph_mse(self, save=False,limits=None):
+        """
+        Plots the Mean Squared Error (MSE) graph as a function of kappa/snr.
+
+        Parameters:
+        - save (bool): If True, saves the plot and data to files (default: False).
+        """
+        self.compute_graph_data()  # Ensure data is computed
+        self.compute_stats()  # Compute statistics from computed data
+
+        x = self.stats[:, 0]  # kappa/snr values from computed stats
+
+        # Determine y values and errors based on prior type
+        if self.prior == "Beta":
+            y = 0.3 * np.ones_like(self.stats[:, 1])  # MSE initialization for Beta prior
+        elif self.prior == "Normal":
+            y = 1.0 * np.ones_like(self.stats[:, 1]) # MSE initialization for Normal prior
+
+        if self.bayes_optimal:
+            y -= self.stats[:, 3]  # MSE calculation for Bayes optimal model
+            y_error = self.stats[:, 4] / self.num_per_var ** (1 / 4)  # Error bars for Bayes optimal model
+        else:
+            y += self.stats[:, 1] - 2 * self.stats[:, 3]  # MSE calculation for non Bayes optimal model
+            y_error = (self.stats[:,2] + 2 * self.stats[:, 4]) / self.num_per_var ** (1 / 4)  # Error bars for non Bayes optimal model
+
+        x_error = np.zeros_like(x)  # No x-error for this plot
+
+        # Plotting setup
+        plt.style.use('seaborn-whitegrid')
+        plt.figure(figsize=(8, 6))
+        plt.errorbar(x, y, xerr=x_error, yerr=y_error, fmt='o-', color='royalblue', capsize=7)
+        if self.prior == "Beta" and limits is None:
+            plt.ylim(0.0, 0.055)  # Limit y-axis to 0.0 to 0.055
+        elif self.prior == "Normal" and limits is None:
+            plt.ylim(0.55, 0.9)  # Limit y-axis to 0.0 to 1.0
+        else:
+            plt.ylim(limits[0],limits[1])
+        plt.xlabel(self.variable)
+        plt.ylabel('MSE')
+        plt.grid(color='lightgray', linestyle='--', linewidth=0.5)
+        plt.minorticks_on()
+
+        # Save plot and data if save=True
         if save:
+            plt.savefig("MSE_plot.png", dpi=600)  # Save plot as PNG file
+
+            # Save graph data as CSV file
             graph_data = np.array([x, y, y_error]).transpose()
             np.savetxt("MSE_graph_data.csv", graph_data, delimiter=",")
 
-        plt.errorbar(x, y, xerr=x_error, yerr=y_error, fmt='o', elinewidth=3, capsize=0, alpha=0.6)
-
-        plt.title('Mean square error as a function of kappa')
-        plt.xlabel('1/kappa')
-        plt.ylabel('MSE')
-        plt.grid()
-
-        plt.show()
-
-        plt.savefig('MSE_graph.png')
+        plt.legend()  # Show legend
