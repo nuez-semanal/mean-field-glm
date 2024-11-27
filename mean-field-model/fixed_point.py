@@ -3,14 +3,14 @@ from auxiliary import AuxiliaryFunctions
 from probabilistic_model import ProbabilisticModel
 
 class FixedPointEquations(AuxiliaryFunctions):
-    def __init__(self,mean_field_model,v_b,c_b,c_bbs,r_1,r_2,r_3,n_iterations,tune,chains):
+    def __init__(self,mean_field_model,v_b,c_b,c_bbs,r_1,r_2,r_3,n_iterations,draws,tune,chains):
         self.mean_field_model = mean_field_model
 
         self.v_b, self.c_b, self.c_bbs = v_b, c_b, c_bbs
         self.r_1, self.r_2, self.r_3 = r_1, r_2, r_3
         self.t_gamma = self.compute_t_gamma()
 
-        self.probabilistic_model = ProbabilisticModel(self,n_iterations,tune,chains)
+        self.probabilistic_model = ProbabilisticModel(self,n_iterations,draws,tune,chains)
 
     def get_mean_field_parameters(self):
         n = self.mean_field_model.n
@@ -35,7 +35,7 @@ class FixedPointEquations(AuxiliaryFunctions):
         for i in range(1000):
             th = X[i,:][0,0]
             e = X[i,:][:,1]
-            y = self.gauss_density(th)*np.multiply(self.dif_tilde_t_delta(kappa*th-e),self.dif_sigmoid(e))
+            y = self.gauss_density(th)*np.multiply(self.dif_tilde_t_delta(kappa*th-e,d),self.dif_sigmoid(e))
             slice_integrals.append(np.trapz(y,e))
 
         return np.trapz(slice_integrals,range_xth)
@@ -69,29 +69,31 @@ class FixedPointEquations(AuxiliaryFunctions):
         tilde_v, tilde_q, tilde_m, bar_m, t_gamma, a_dp = 0,0,0,0,0,0
         n = self.mean_field_model.n
         posterior = self.probabilistic_model.posterior2
+        posterior_critical = self.probabilistic_model.posterior3
         observations = self.probabilistic_model.observations2
-        chains = self.probabilistic_model.chains
-        normalisation = chains * n
+        observations_critical = self.probabilistic_model.observations3
+        n_rejected = self.probabilistic_model.rejected_samples
+        draws = self.probabilistic_model.draws
+        normalisation = draws * n
+        normalisation_critical = draws * n_rejected
 
-        for i in range(chains):
+        # Compute the dot products that define the critical quantities
+        for i in range(draws):
+            t, s = np.random.randint(0, draws, 2)
 
-            s_theta = self.compute_s_theta(observations, posterior[i])
-            tilde_v += np.dot(s_theta,s_theta)/normalisation
-
-            t, s = np.random.randint(0,chains,2)
             s_theta_1 = self.compute_s_theta(observations, posterior[t])
             s_theta_2 = self.compute_s_theta(observations, posterior[s])
-            tilde_q += np.dot(s_theta_1,s_theta_2)/normalisation
 
-            s_theta_star = self.compute_s_theta_star(observations, posterior[i])
-            s_theta = self.compute_s_theta(observations, posterior[i])
-            tilde_m += np.dot(s_theta_star,s_theta)/normalisation
+            s_theta_crit_1 = self.compute_s_theta(observations_critical, posterior_critical[t])
+            s_theta_crit_2 = self.compute_s_theta(observations_critical, posterior_critical[s])
 
-            s_theta_star_1 = self.compute_s_theta_star(observations, posterior[t])
-            s_theta_2 = self.compute_s_theta(observations, posterior[s])
-            bar_m += np.dot(s_theta_star_1,s_theta_2)/normalisation
+            s_theta_star_crit_1 = self.compute_s_theta_star(observations_critical, posterior_critical[s])
 
-            a_dp += np.sum(self.dif_sigmoid(posterior[i]))/normalisation
+            tilde_v += np.dot(s_theta_1, s_theta_1) / normalisation
+            tilde_q += np.dot(s_theta_1,s_theta_2) / normalisation
+            tilde_m += np.dot(s_theta_star_crit_1,s_theta_crit_1) / normalisation_critical
+            bar_m += np.dot(s_theta_star_crit_1,s_theta_crit_2) / normalisation_critical
+            a_dp += np.sum(self.dif_sigmoid(posterior[i])) / normalisation
 
         r_1 = a_dp + tilde_q - tilde_v
         r_2 = t_gamma + tilde_m - bar_m

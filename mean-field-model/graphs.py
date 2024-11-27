@@ -12,7 +12,6 @@ class ComputeMseGraph(BlockComputation):
         self.save_data()
 
         n_kappa = len(self.kappa_list)
-
         stats = np.zeros((n_kappa,5))
 
         for i in range(n_kappa):
