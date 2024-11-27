@@ -1,6 +1,6 @@
 # Bayesian GLM Mean Field Equations simulator
 
-This repository contians numerical tools to simulate the Fixed Point Equations associated to Bayesian GLMs as described by the theory in the paper "Finite Marginals of Bayesian GLMs in the High-Dimensional Regime" by Manuel Sáenz and Pragya Sur.
+This repository contains numerical tools to simulate the Fixed Point Equations associated to Bayesian GLMs as described by the theory in the paper "Finite Marginals of Bayesian GLMs in the High-Dimensional Regime" by Manuel Sáenz and Pragya Sur.
 
 ## Features
 
@@ -10,15 +10,26 @@ This repository contians numerical tools to simulate the Fixed Point Equations a
 
 ## Installation
 
-1. Clone the repository:
+Clone the repository:
    ```bash
    git clone https://github.com/nuez-semanal/mean-field-glm.git
    ```
-
 ## Dependencies
 
-- `numpy`: For numerical computations.
-- `pymc`: For probabilistic modeling and Bayesian inference.
+- **Python 3.10+**: Ensure you have Python installed.  
+- **Dependencies Management**: This project uses `Poetry` for dependency management. All required packages are specified in `pyproject.toml`. 
+- **Packages used**: `numpy`, `pymc`, and `matplotlib`.
+
+### Installation Instructions
+
+1. Install Poetry if not already available:
+   ```bash
+   pip install poetry
+   ```
+2. Install the project's dependencies:
+   ```bash
+   poetry install
+   ```
 
 To handle dependencies, a poetry toml file is included in the repository.
 
@@ -83,22 +94,6 @@ graph_creator = MseGraphCreator(
 
 graph_creator.plot_graph_MSE(save = True)
 ```
-
-## Dependencies
-
-- **Python 3.8+**: Ensure you have Python installed.  
-- **Dependencies Management**: This project uses `Poetry` for dependency management. All required packages are specified in `pyproject.toml`.
-
-### Installation Instructions
-
-1. Install Poetry if not already available:
-   ```bash
-   pip install poetry
-   ```
-2. Install the project's dependencies:
-   ```bash
-   poetry install
-   ```
 
 ### Project Structure
 
