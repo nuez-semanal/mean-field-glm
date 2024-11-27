@@ -12,15 +12,7 @@ This repository contians numerical tools to simulate the Fixed Point Equations a
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/bayesian-glm-toolkit.git
-   ```
-2. Navigate to the project directory:
-   ```bash
-   cd bayesian-glm-toolkit
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
+   git clone https://github.com/nuez-semanal/mean-field-glm.git
    ```
 
 ## Dependencies
