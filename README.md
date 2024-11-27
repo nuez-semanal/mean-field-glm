@@ -53,7 +53,8 @@ model.run_iterations()
 model.show_order_parameters()
 ```
 
-### 2. Compute Graph Statistics
+### 2. Compute many fixed points
+
 To compute many fixed points at once, use the `BlockComputation` class:
 
 ```python

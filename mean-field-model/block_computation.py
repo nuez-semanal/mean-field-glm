@@ -59,7 +59,7 @@ class BlockComputation():
         self.data = None
         self.tolerance = tolerance
 
-    def compute_graph_data(self):
+    def compute_data(self):
         """
         Computes the data points for the graph based on the specified variable and its values.
 
