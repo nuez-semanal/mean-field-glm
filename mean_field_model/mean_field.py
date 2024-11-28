@@ -367,8 +367,6 @@ class MeanFieldGLM(AuxiliaryFunctions):
         """
         if num_model is None:
             num_model = [1, 2, 3]
-        if self.prior == "Normal":
-            num_model = [2, 3]
 
         if 1 in num_model:
             # Draw samples from the first mean-field model
@@ -409,16 +407,6 @@ class MeanFieldGLM(AuxiliaryFunctions):
             Updated value of c_bbs.
         """
 
-        # When the prior is Normal, the first set of equations is directly integrated
-        if self.prior == "Normal":
-            self.v_b = 1/(self.r_1+1/self.snr) + self.snr*self.r_2**2/(self.r_1+1/self.snr)**2 + self.r_3**2/(self.r_1+1/self.snr)**2
-            self.c_b = self.snr*self.r_2**2/(self.r_1+1/self.snr)**2 + self.r_3**2/(self.r_1+1/self.snr)**2
-            self.c_bbs = self.snr*self.r_2/(self.r_1+1/self.snr)
-            if self.bayes_optimal:
-                self.v_b = self.snr
-                self.c_bbs = self.c_b
-            return None
-
         order_parameters = np.zeros((self.draws, 3))
 
         # Compute dot products that define the order parameters
@@ -436,6 +424,8 @@ class MeanFieldGLM(AuxiliaryFunctions):
 
         if self.bayes_optimal and self.prior == "Beta":
                 v_b, c_b = 0.3*self.snr, c_bbs
+        if self.bayes_optimal and self.prior == "Normal":
+                v_b, c_b = 1.0*self.snr, c_bbs
 
         # Update class attributes with computed values
         self.v_b = v_b

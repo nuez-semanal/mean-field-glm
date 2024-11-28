@@ -4,7 +4,7 @@ from mean_field_model.block_computation import BlockComputation
 
 class MseGraphCreator(BlockComputation):
     """
-    ComputeMseGraph computes graphs derived from the MeanFieldGLM class.
+    MseGraphCreator computes graphs derived from the MeanFieldGLM class.
 
     This class allows for computing and analyzing various statistics and visualizations based on different
     configurations of MeanFieldGLM models.
