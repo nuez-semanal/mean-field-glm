@@ -1,6 +1,6 @@
 import numpy as np
 import pymc as pm
-from auxiliary import AuxiliaryFunctions
+from mean_field_model.auxiliary import AuxiliaryFunctions
 
 class MeanFieldGLM(AuxiliaryFunctions):
     """
@@ -231,17 +231,17 @@ class MeanFieldGLM(AuxiliaryFunctions):
         elif self.log_likelihood == "Linear":
             return 1 # The value of t_gamma for Linear Regression is equal to 1
 
-    def generate_thetas(self, xi_B, xi_Bs, z_BBs):
+    def generate_thetas(self, xi_b, xi_bs, z_bbs):
         """
         Generate theta and theta_s values for the mean-field models 2 and 3.
 
         Parameters
         ----------
-        xi_B : array-like
+        xi_b : array-like
             Random normal variables for theta computation.
-        xi_Bs : array-like
+        xi_bs : array-like
             Random normal variables for theta_s computation.
-        z_BBs : array-like
+        z_bbs : array-like
             Random normal variables for theta and theta_s computation.
 
         Returns
@@ -251,12 +251,12 @@ class MeanFieldGLM(AuxiliaryFunctions):
         """
         if self.c_b > 0.0001:
             # Compute theta_s and theta when c_b is positive
-            theta_s = np.sqrt(self.kappa * (self.gamma**2 - self.c_bbs**2 / self.c_b)) * xi_Bs + self.c_bbs * np.sqrt(self.kappa / self.c_b) * z_BBs
-            theta = pm.Deterministic("theta", np.sqrt(self.kappa * (self.v_b - self.c_b)) * xi_B + np.sqrt(self.kappa * self.c_b) * z_BBs)
+            theta_s = np.sqrt(self.kappa * (self.gamma**2 - self.c_bbs**2 / self.c_b)) * xi_bs + self.c_bbs * np.sqrt(self.kappa / self.c_b) * z_bbs
+            theta = pm.Deterministic("theta", np.sqrt(self.kappa * (self.v_b - self.c_b)) * xi_b + np.sqrt(self.kappa * self.c_b) * z_bbs)
         else:
             # Compute theta_s and theta when c_b is non-positive
-            theta_s = np.sqrt(self.kappa) * self.gamma * xi_Bs
-            theta = pm.Deterministic("theta", np.sqrt(self.kappa * self.v_b) * xi_B)
+            theta_s = np.sqrt(self.kappa) * self.gamma * xi_bs
+            theta = pm.Deterministic("theta", np.sqrt(self.kappa * self.v_b) * xi_b)
         return theta, theta_s
 
     def update_mean_field_models(self):
@@ -304,11 +304,11 @@ class MeanFieldGLM(AuxiliaryFunctions):
         """
         with pm.Model() as self.mean_field_model2:
             # Generate random normal variables for theta computation
-            z_BBs = xi_Bs = np.random.normal(0, 1, size=self.n)
-            xi_B = pm.Normal("xi_B", shape=self.n)
+            z_bbs = xi_bs = np.random.normal(0, 1, size=self.n)
+            xi_b = pm.Normal("xi_b", shape=self.n)
 
             # Generate theta and theta_s values
-            theta, theta_s = self.generate_thetas(xi_B, xi_Bs, z_BBs)
+            theta, theta_s = self.generate_thetas(xi_b, xi_bs, z_bbs)
 
             # Generate observations based on the type of regression
             if self.log_likelihood == "Logistic":
@@ -332,11 +332,11 @@ class MeanFieldGLM(AuxiliaryFunctions):
         """
         with pm.Model() as self.mean_field_model3:
             # Sample critical values
-            xi_Bs, z_BBs, e, self.rejected_samples = self.sample_criticals(self.n)
-            xi_B = pm.Normal("xi_B", shape=self.n)
+            xi_bs, z_bbs, e, self.rejected_samples = self.sample_criticals(self.n)
+            xi_b = pm.Normal("xi_b", shape=self.n)
 
             # Generate theta and theta_s values
-            theta, theta_s = self.generate_thetas(xi_B, xi_Bs, z_BBs)
+            theta, theta_s = self.generate_thetas(xi_b, xi_bs, z_bbs)
 
             self.observations3 = theta_s - e
 
@@ -474,7 +474,7 @@ class MeanFieldGLM(AuxiliaryFunctions):
             def compute_s_theta_star(observations: np.ndarray, posterior: np.ndarray, l: int):
                 return posterior[l]
 
-            def second_dif_A(x: float):
+            def second_dif_A(x: np.ndarray):
                 return np.ones(len(x))
 
             # In Linear regression, observations3 and posterior3 are just the same as

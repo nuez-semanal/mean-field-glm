@@ -1,6 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
-from block_computation import BlockComputation
+from mean_field_model.block_computation import BlockComputation
 
 class MseGraphCreator(BlockComputation):
     """

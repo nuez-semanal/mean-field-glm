@@ -1,4 +1,4 @@
 .idea/
 poetry.lock
 .gitignore
-mean-field-model/__pycache__/
+mean_field_model/__pycache__/

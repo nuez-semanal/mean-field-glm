@@ -1,6 +1,6 @@
 import numpy as np
 from IPython.display import clear_output
-from mean_field import MeanFieldGLM
+from mean_field_model.mean_field import MeanFieldGLM
 
 class BlockComputation:
     """
@@ -41,8 +41,8 @@ class BlockComputation:
 
     """
     def __init__(self, var_list= (0.1,1.0), init_params = (1.0,0.0,0.0,1e-6,0.0,0.0), variable="kappa", num_per_var=5,
-                 delta=1.0, fixed_var=1.0, prior="Normal", signal="Normal", tolerance = 0.01, max_it = 7,
-                 log_likelihood = "Logistic", save=True, bayes_optimal=False):
+                 delta=0.001, fixed_var=1.0, prior="Normal", signal="Normal", tolerance = 0.01, max_it = 7,
+                 log_likelihood = "Logistic", save=True, bayes_optimal=False, file_name = "Computed_data", seed = None):
         self.var_list = var_list
         self.num_per_var = num_per_var
         self.max_it = max_it
@@ -55,6 +55,8 @@ class BlockComputation:
         self.save = save
         self.bayes_optimal = bayes_optimal
         self.variable = variable
+        self.file_name = file_name
+        self.seed = seed
         self.stats = None
         self.data = None
         self.tolerance = tolerance
@@ -101,14 +103,16 @@ class BlockComputation:
             model = MeanFieldGLM(kappa=variable_value,v_b=self.init_params[0],c_b=self.init_params[1],
                                  c_bbs=self.init_params[2],r_1=self.init_params[3],r_2=self.init_params[4],
                                  r_3=self.init_params[5], max_it=self.max_it, log_likelihood = self.log_likelihood,
-                                 p=3000, n=3000, delta=self.delta, prior=self.prior,tolerance=self.tolerance,
-                                 signal=self.signal, snr=self.fixed_var, bayes_optimal=self.bayes_optimal)
+                                 p=2000, n=2000, delta=self.delta, prior=self.prior,tolerance=self.tolerance,
+                                 signal=self.signal, snr=self.fixed_var, bayes_optimal=self.bayes_optimal,
+                                 seed=self.seed)
         elif self.variable == "snr":
             model = MeanFieldGLM(snr=variable_value,v_b=self.init_params[0],c_b=self.init_params[1],
                                  c_bbs=self.init_params[2],r_1=self.init_params[3],r_2=self.init_params[4],
                                  r_3=self.init_params[5], max_it=self.max_it, log_likelihood = self.log_likelihood,
-                                 p=3000, n=3000, delta=self.delta, prior=self.prior,tolerance=self.tolerance,
-                                 signal=self.signal, kappa=self.fixed_var, bayes_optimal=self.bayes_optimal)
+                                 p=2000, n=2000, delta=self.delta, prior=self.prior,tolerance=self.tolerance,
+                                 signal=self.signal, kappa=self.fixed_var, bayes_optimal=self.bayes_optimal,
+                                 seed=self.seed)
         else:
             raise ValueError(f"Unsupported variable type: {self.variable}")
 
@@ -134,12 +138,15 @@ class BlockComputation:
             print("Please, compute the data first!")
             raise ValueError()
 
-    def save_data(self, name="Computed data"):
+    def save_data(self):
         """
         Saves the computed data to a CSV file.
+
+        The file generated contains the following columns:
+        SEED | ENUMERATED VARIABLE | FIXED VARIABLE | V_B | C_B | C_BBS | R_1 | R_2 | R_3
 
         Parameters:
         - name (str): Name of the CSV file (default: "Computed data").
         """
         self.check_if_data()  # Ensure data is computed
-        np.savetxt(name + ".csv", self.data, delimiter=",")
+        np.savetxt(self.file_name + ".csv", self.data, delimiter=",")
