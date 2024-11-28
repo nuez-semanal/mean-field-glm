@@ -84,7 +84,7 @@ class MseGraphCreator(BlockComputation):
         Parameters:
         - save (bool): If True, saves the plot and data to files (default: False).
         """
-        self.compute_graph_data()  # Ensure data is computed
+        self.compute_data()  # Ensure data is computed
         self.compute_stats()  # Compute statistics from computed data
 
         x = self.stats[:, 0]  # kappa/snr values from computed stats

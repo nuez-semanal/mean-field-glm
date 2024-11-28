@@ -2,7 +2,7 @@ import numpy as np
 from IPython.display import clear_output
 from mean_field import MeanFieldGLM
 
-class BlockComputation():
+class BlockComputation:
     """
     DataGraphGLM computes graphs derived from the MeanFieldGLM class.
 
@@ -66,11 +66,11 @@ class BlockComputation():
         For each value in var_list:
         - If variable is 'kappa', computes MeanFieldGLM with varying kappa and fixed snr.
         - If variable is 'snr', computes MeanFieldGLM with varying snr and fixed kappa.
-        Collects critical quantities and stores them in self.data.
+        Collects order parameters and stores them in self.data.
 
-        If save is True, saves the computed data with critical quantities to file.
+        If save is True, saves the computed data with order parameters to file.
         """
-        data = np.zeros(shape=(len(self.var_list)*self.num_per_var, 8))
+        self.data = np.zeros(shape=(len(self.var_list)*self.num_per_var, 9))
 
         for i in range(len(self.var_list)):
             variable_value = self.var_list[i]
@@ -79,11 +79,9 @@ class BlockComputation():
                 print(f"%%%%%%%%%% COMPUTING DATA POINT {n+1} OUT OF {self.num_per_var} FOR {self.variable.upper()} = {variable_value} %%%%%%%%%%\n\n")
 
                 # Compute data point for the current variable value
-                self.compute_data_for_variable(variable_value, n, i, data)
+                self.compute_data_for_variable(variable_value, n, i, self.data)
 
                 clear_output(wait=True)
-
-            self.data = data
 
         if self.save:
             self.save_data()
@@ -95,9 +93,9 @@ class BlockComputation():
         For each value in var_list:
         - If variable is 'kappa', computes MeanFieldGLM with varying kappa and fixed snr.
         - If variable is 'snr', computes MeanFieldGLM with varying snr and fixed kappa.
-        Collects critical quantities and stores them in self.data.
+        Collects order parameters and stores them in self.data.
 
-        If save is True, saves the computed data with critical quantities to file.
+        If save is True, saves the computed data with order parameters to file.
         """
         if self.variable == "kappa":
             model = MeanFieldGLM(kappa=variable_value,v_b=self.init_params[0],c_b=self.init_params[1],
@@ -115,14 +113,15 @@ class BlockComputation():
             raise ValueError(f"Unsupported variable type: {self.variable}")
 
         model.run_iterations()
-        quantities = model.show_order_parameters(show=False, output=True)
+        order_parameters = model.show_order_parameters(show=False, output=True)
 
         data_index = n + self.num_per_var * i
-        data[data_index, 0] = variable_value
-        data[data_index, 1] = self.fixed_var
+        data[data_index, 0] = model.seed
+        data[data_index, 1] = variable_value
+        data[data_index, 2] = self.fixed_var
 
         for j in range(6):
-            data[data_index, j + 2] = quantities[j]
+            data[data_index, j + 3] = order_parameters[j]
 
     def check_if_data(self):
         """
