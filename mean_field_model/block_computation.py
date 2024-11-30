@@ -4,17 +4,14 @@ from mean_field_model.mean_field import MeanFieldGLM
 
 class BlockComputation:
     """
-    DataGraphGLM computes graphs derived from the MeanFieldGLM class.
-
-    This class allows for computing and analyzing various statistics and visualizations based on different
-    configurations of MeanFieldGLM models.
+    BlockComputation computes iteratively many fixed points derived from the MeanFieldGLM class.
 
     Parameters
     ----------
-    var_list : list, optional
-        List of values for the variable of interest (e.g., kappa, snr). Default is [1.0].
+    var_tuple : tuple, optional
+        Tuple of values for the variable of interest (e.g., kappa, snr). Default is (0.1,1.0).
     variable : str, optional
-        Name of the variable being varied (e.g., "kappa", "snr"). Default is "kappa".
+        Name of the variable being varied. Should be either "kappa" or "snr". Default is "kappa".
     num_per_var : int, optional
         Number of samples per variable value. Default is 5.
     delta : float, optional
@@ -26,24 +23,24 @@ class BlockComputation:
     signal : str, optional
         Signal distribution for the MeanFieldGLM model. Must be "Normal", "Rademacher", or "Beta". Default is "Normal".
     save : bool, optional
-        If True, saves the computed statistics or graphs. Default is True.
+        If True, saves the computed data. Default is True.
     bayes_optimal : bool, optional
-        If True, assumes the MeanFieldGLM model is Bayes optimal. Default is False.
+        If True, assumes the MeanFieldGLM model is Bayes optimal and uses Nishimori identities. Default is False.
 
     Attributes
     ----------
     data : NoneType
-        Placeholder for any required data storage.
+        Placeholder for the fixed points computed.
 
     Notes
     -----
     - The `BlockComputation` class is designed to work in conjunction with the `MeanFieldGLM`.
 
     """
-    def __init__(self, var_list= (0.1,1.0), init_params = (1.0,0.0,0.0,1e-6,0.0,0.0), variable="kappa", num_per_var=5,
+    def __init__(self, var_tuple= (0.1,1.0), init_params = (1.0,0.0,0.0,1e-6,0.0,0.0), variable="kappa", num_per_var=5,
                  delta=0.001, fixed_var=1.0, prior="Normal", signal="Normal", tolerance = 0.01, max_it = 7,
                  log_likelihood = "Logistic", save=True, bayes_optimal=False, file_name = "Computed_data", seed = None):
-        self.var_list = var_list
+        self.var_tuple = var_tuple
         self.num_per_var = num_per_var
         self.max_it = max_it
         self.init_params = init_params
@@ -63,19 +60,19 @@ class BlockComputation:
 
     def compute_data(self):
         """
-        Computes the data points for the graph based on the specified variable and its values.
+        Computes many fixed points based on the specified variable and its values.
 
-        For each value in var_list:
+        For each value in var_tuple:
         - If variable is 'kappa', computes MeanFieldGLM with varying kappa and fixed snr.
         - If variable is 'snr', computes MeanFieldGLM with varying snr and fixed kappa.
         Collects order parameters and stores them in self.data.
 
         If save is True, saves the computed data with order parameters to file.
         """
-        self.data = np.zeros(shape=(len(self.var_list)*self.num_per_var, 9))
+        self.data = np.zeros(shape=(len(self.var_tuple)*self.num_per_var, 9))
 
-        for i in range(len(self.var_list)):
-            variable_value = self.var_list[i]
+        for i in range(len(self.var_tuple)):
+            variable_value = self.var_tuple[i]
 
             for n in range(self.num_per_var):
                 print(f"%%%%%%%%%% COMPUTING DATA POINT {n+1} OUT OF {self.num_per_var} FOR {self.variable.upper()} = {variable_value} %%%%%%%%%%\n\n")
@@ -85,19 +82,14 @@ class BlockComputation:
 
                 clear_output(wait=True)
 
-        if self.save:
-            self.save_data()
+            if self.save:
+                self.save_data()
 
     def compute_data_for_variable(self, variable_value, n, i, data):
         """
-        Computes a single data point for the graph based on the specified variable and its values.
+        Computes a single fixed point for the specified variable and its values.
 
-        For each value in var_list:
-        - If variable is 'kappa', computes MeanFieldGLM with varying kappa and fixed snr.
-        - If variable is 'snr', computes MeanFieldGLM with varying snr and fixed kappa.
-        Collects order parameters and stores them in self.data.
-
-        If save is True, saves the computed data with order parameters to file.
+        Stores the values of the order parameters in the fixed point and parameters/seed used in data.
         """
         if self.variable == "kappa":
             model = MeanFieldGLM(kappa=variable_value,v_b=self.init_params[0],c_b=self.init_params[1],
@@ -129,7 +121,7 @@ class BlockComputation:
 
     def check_if_data(self):
         """
-        Checks if self.data is computed.
+        Checks if self.data has been computed.
 
         Raises:
         - ValueError: If self.data is None, indicating data has not been computed.
