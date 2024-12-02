@@ -16,7 +16,7 @@ Clone the repository:
    ```
 ## Dependencies
 
-- **Python 3.10+**: Ensure you have Python installed.  
+- **Python 3.12+**: Ensure you have Python installed.  
 - **Dependencies Management**: This project uses `Poetry` for dependency management. All required packages are specified in `pyproject.toml`. 
 - **Packages used**: `numpy`, `pymc`, and `matplotlib`.
 
