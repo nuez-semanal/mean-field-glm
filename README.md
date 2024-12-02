@@ -39,7 +39,7 @@ To handle dependencies, a poetry toml file is included in the repository.
 Use the `MeanFieldGLM` class to define your Bayesian GLM with desired parameters:
 
 ```python
-from mean_field_glm import MeanFieldGLM
+from mean_field_glm.model import MeanFieldGLM
 
 model = MeanFieldGLM(
     p=1000,
@@ -61,7 +61,7 @@ model.show_order_parameters()
 To compute many fixed points at once, use the `BlockComputation` class:
 
 ```python
-from block_computation import BlockComputation
+from mean_field_glm.block_computation import BlockComputation
 
 block = BlockComputation(
     var_list=[0.5, 1.0, 2.0],
@@ -81,7 +81,7 @@ block.save_data(name = "Results of simulations")
 Visualize the Mean Squared Error (MSE) for different model parameters using `MseGraphCreator`:
 
 ```python
-from mse_graph_creator import MseGraphCreator
+from mean_field_glm.graphs import MseGraphCreator
 
 graph_creator = MseGraphCreator(
     var_list=[0.5, 1.0, 2.0],
