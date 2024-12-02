@@ -1,5 +1,9 @@
 .idea/
 poetry.lock
 .gitignore
+.DS_Store
 /mean_field_glm/__pycache__/
+/mean_field_glm/.DS_Store
+/simulation-scripts/.DS_Store
+/simulation-results/.DS_Store
 /simulation-results/.~lock.logistic_normal_normal_snr.csv#
