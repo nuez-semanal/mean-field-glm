@@ -1,6 +1,6 @@
 import numpy as np
 import pymc as pm
-from mean_field_model.auxiliary import AuxiliaryFunctions
+from mean_field_glm.auxiliary import AuxiliaryFunctions
 
 class MeanFieldGLM(AuxiliaryFunctions):
     """

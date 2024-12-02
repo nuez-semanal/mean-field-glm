@@ -1,6 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
-from mean_field_model.block_computation import BlockComputation
+from mean_field_glm.block_computation import BlockComputation
 
 class MseGraphCreator(BlockComputation):
     """
@@ -44,13 +44,13 @@ class MseGraphCreator(BlockComputation):
       computations and generate visual outputs based on the specified parameters.
 
     """
-    def __init__(self, var_list= (0.1,1.0), init_params = (1.0,0.0,0.0,1e-6,0.0,0.0), variable="kappa", num_per_var=5,
+    def __init__(self, var_tuple= (0.1,1.0), init_params = (1.0,0.0,0.0,1e-6,0.0,0.0), variable="kappa", num_per_var=5,
                  delta=1.0, fixed_var=1.0, prior="Normal", signal="Normal", tolerance = 0.01, max_it = 7,
-                 log_likelihood = "Logistic", save=True, bayes_optimal=False):
-        super().__init__(var_list=var_list, init_params=init_params, variable=variable,
+                 log_likelihood = "Logistic", save=True, bayes_optimal=False,file_name="Computed_data"):
+        super().__init__(var_tuple=var_tuple, init_params=init_params, variable=variable,
                          num_per_var=num_per_var,delta=delta, fixed_var=fixed_var, prior=prior,
                          signal=signal, tolerance=tolerance, max_it=max_it, log_likelihood=log_likelihood,
-                         save=save, bayes_optimal=bayes_optimal)
+                         save=save, bayes_optimal=bayes_optimal, file_name=file_name)
 
         self.stats = None
 
@@ -64,18 +64,21 @@ class MseGraphCreator(BlockComputation):
         - Mean and standard deviation of critical quantities (columns 2 and 3) for each kappa value.
         """
         if self.stats is None:
-            n_kappa = len(self.var_list)
+            n_kappa = len(self.var_tuple)
             self.stats = np.zeros((n_kappa, 6))
 
             for i in range(n_kappa):
                 block_data = self.data[i * self.num_per_var:(i + 1) * self.num_per_var, :]
-                self.stats[i, 0] = block_data[0, 0]  # kappa value
-                self.stats[i, 1] = np.mean(block_data[:, 2])  # mean of column 2 (cB)
-                self.stats[i, 2] = np.std(block_data[:, 2])  # std deviation of column 2
-                self.stats[i, 3] = np.mean(block_data[:, 3])  # mean of column 3 (cBBs)
-                self.stats[i, 4] = np.std(block_data[:, 3])  # std deviation of column 3
+                self.stats[i, 0] = block_data[0, 1]  # kappa value
+                self.stats[i, 1] = np.mean(block_data[:, 3])  # mean of column 2 (cB)
+                self.stats[i, 2] = np.std(block_data[:, 3])  # std deviation of column 2
+                self.stats[i, 3] = np.mean(block_data[:, 4])  # mean of column 3 (cBBs)
+                self.stats[i, 4] = np.std(block_data[:, 4])  # std deviation of column 3
         else:
             pass  # stats already computed, do nothing
+
+    def plot_boxplot(self, save=False):
+        pass
 
     def plot_graph_mse(self, save=False,limits=None):
         """
@@ -84,7 +87,9 @@ class MseGraphCreator(BlockComputation):
         Parameters:
         - save (bool): If True, saves the plot and data to files (default: False).
         """
-        self.compute_data()  # Ensure data is computed
+        if self.data is None:
+            self.compute_data()  # Ensure data is computed
+
         self.compute_stats()  # Compute statistics from computed data
 
         x = self.stats[:, 0]  # kappa/snr values from computed stats
@@ -105,16 +110,16 @@ class MseGraphCreator(BlockComputation):
         x_error = np.zeros_like(x)  # No x-error for this plot
 
         # Plotting setup
-        plt.style.use('seaborn-whitegrid')
+        #plt.style.use('seaborn-whitegrid')
         plt.figure(figsize=(8, 6))
-        plt.errorbar(x, y, xerr=x_error, yerr=y_error, fmt='o-', color='royalblue', capsize=7)
+        plt.errorbar(x, y, xerr=x_error, yerr=y_error, fmt='o', color='royalblue', capsize=7)
         if self.prior == "Beta" and limits is None:
             plt.ylim(0.0, 0.055)  # Limit y-axis to 0.0 to 0.055
         elif self.prior == "Normal" and limits is None:
             plt.ylim(0.55, 0.9)  # Limit y-axis to 0.0 to 1.0
         else:
             plt.ylim(limits[0],limits[1])
-        plt.xlabel(self.variable)
+        plt.xlabel("1/"+self.variable)
         plt.ylabel('MSE')
         plt.grid(color='lightgray', linestyle='--', linewidth=0.5)
         plt.minorticks_on()
@@ -127,4 +132,6 @@ class MseGraphCreator(BlockComputation):
             graph_data = np.array([x, y, y_error]).transpose()
             np.savetxt("MSE_graph_data.csv", graph_data, delimiter=",")
 
-        plt.legend()  # Show legend
+        # plt.legend()  # Show legend
+
+        plt.show()
