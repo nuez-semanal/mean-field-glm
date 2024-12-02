@@ -1,4 +1,5 @@
 .idea/
 poetry.lock
 .gitignore
-mean_field_model/__pycache__/
+/mean_field_glm/__pycache__/
+/simulation-results/.~lock.logistic_normal_normal_snr.csv#

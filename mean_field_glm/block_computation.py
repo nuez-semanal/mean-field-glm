@@ -1,6 +1,6 @@
 import numpy as np
 from IPython.display import clear_output
-from mean_field_glm.mean_field import MeanFieldGLM
+from mean_field_glm.model import MeanFieldGLM
 
 class BlockComputation:
     """

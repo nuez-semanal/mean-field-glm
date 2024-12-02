@@ -69,18 +69,18 @@ class MseGraphCreator(BlockComputation):
 
             for i in range(n_kappa):
                 block_data = self.data[i * self.num_per_var:(i + 1) * self.num_per_var, :]
-                self.stats[i, 0] = block_data[0, 1]  # kappa value
-                self.stats[i, 1] = np.mean(block_data[:, 3])  # mean of column 2 (cB)
-                self.stats[i, 2] = np.std(block_data[:, 3])  # std deviation of column 2
-                self.stats[i, 3] = np.mean(block_data[:, 4])  # mean of column 3 (cBBs)
-                self.stats[i, 4] = np.std(block_data[:, 4])  # std deviation of column 3
+                self.stats[i, 0] = block_data[0, 1]  # kappa/snr value
+                self.stats[i, 1] = np.mean(block_data[:, 4])  # mean of column 5 (c_b)
+                self.stats[i, 2] = np.std(block_data[:, 4])  # std deviation of column 5
+                self.stats[i, 3] = np.mean(block_data[:, 5])  # mean of column 6 (c_bbs)
+                self.stats[i, 4] = np.std(block_data[:, 5])  # std deviation of column 6
         else:
             pass  # stats already computed, do nothing
 
     def plot_boxplot(self, save=False):
         pass
 
-    def plot_graph_mse(self, save=False,limits=None):
+    def plot_graph_mse(self, save=False):
         """
         Plots the Mean Squared Error (MSE) graph as a function of kappa/snr.
 
@@ -92,7 +92,10 @@ class MseGraphCreator(BlockComputation):
 
         self.compute_stats()  # Compute statistics from computed data
 
-        x = self.stats[:, 0]  # kappa/snr values from computed stats
+        if self.variable == "kappa":
+            x = 1 / self.stats[:, 0]  # If variable is kappa we plot as function of 1/kappa
+        else:
+            x = self.stats[:, 0]
 
         # Determine y values and errors based on prior type
         if self.prior == "Beta":
@@ -101,8 +104,8 @@ class MseGraphCreator(BlockComputation):
             y = 1.0 * np.ones_like(self.stats[:, 1]) # MSE initialization for Normal prior
 
         if self.bayes_optimal:
-            y -= self.stats[:, 3]  # MSE calculation for Bayes optimal model
-            y_error = self.stats[:, 4] / self.num_per_var ** (1 / 4)  # Error bars for Bayes optimal model
+            y -= self.stats[:, 1]  # MSE calculation for Bayes optimal model
+            y_error = self.stats[:, 2] / self.num_per_var ** (1 / 4)  # Error bars for Bayes optimal model
         else:
             y += self.stats[:, 1] - 2 * self.stats[:, 3]  # MSE calculation for non Bayes optimal model
             y_error = (self.stats[:,2] + 2 * self.stats[:, 4]) / self.num_per_var ** (1 / 4)  # Error bars for non Bayes optimal model
@@ -110,16 +113,17 @@ class MseGraphCreator(BlockComputation):
         x_error = np.zeros_like(x)  # No x-error for this plot
 
         # Plotting setup
-        #plt.style.use('seaborn-whitegrid')
+        plt.style.use('ggplot')
         plt.figure(figsize=(8, 6))
         plt.errorbar(x, y, xerr=x_error, yerr=y_error, fmt='o', color='royalblue', capsize=7)
-        if self.prior == "Beta" and limits is None:
-            plt.ylim(0.0, 0.055)  # Limit y-axis to 0.0 to 0.055
-        elif self.prior == "Normal" and limits is None:
-            plt.ylim(0.55, 0.9)  # Limit y-axis to 0.0 to 1.0
+
+        plt.ylim(np.min(y-np.abs(y_error)) - 0.025 ,np.max(y+np.abs(y_error)) + 0.025)
+
+        if self.variable == "kappa":
+            plt.xlabel("1/"+self.variable)
         else:
-            plt.ylim(limits[0],limits[1])
-        plt.xlabel("1/"+self.variable)
+            plt.xlabel(self.variable)
+
         plt.ylabel('MSE')
         plt.grid(color='lightgray', linestyle='--', linewidth=0.5)
         plt.minorticks_on()
@@ -132,6 +136,6 @@ class MseGraphCreator(BlockComputation):
             graph_data = np.array([x, y, y_error]).transpose()
             np.savetxt("MSE_graph_data.csv", graph_data, delimiter=",")
 
-        # plt.legend()  # Show legend
+        plt.legend()  # Show legend
 
         plt.show()
