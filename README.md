@@ -99,11 +99,16 @@ graph_creator.plot_graph_MSE(save = True)
 
 ```
 .
-├── mean-field-model/           # Folder containing all class implementations
+├── mean-field-glm/           # Folder containing all class implementations
 │   ├── auxiliary.py            # Auxiliary functions for the project
-│   ├── mean_field.py           # MeanFieldGLM class implementation
+│   ├── model.py                # MeanFieldGLM class implementation
 │   ├── block_computation.py    # BlockComputation class implementation
 │   ├── graphs.py               # MseGraphCreator class implementation
+├── simulation-results/       # Folder containing graphs, config, and csv files of results
+├── simulation-scripts/       # Folder containing scripts to compute data and create graphs
+│   ├── compute_..._kappa.py    # Compute simulations for Logistic Normal-Normal for varying kappa
+│   ├── compute_..._snr.py      # Compute simulations for Logistic Normal-Normal for varying SNR
+│   ├── mse_graph_from_data.py  # Create an MSE graph from previously computed data
 ├── pyproject.toml              # Poetry configuration file
 ├── .gitignore                  # Git ignore file
 ├── README.md                   # Project documentation (this file)
