@@ -139,3 +139,78 @@ class MseGraphCreator(BlockComputation):
         plt.legend()  # Show legend
 
         plt.show()
+
+class MarginalGraphCreator:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def compute_quantiles(data, q):
+        N = (data < 1e23).sum()
+        quantiles = np.zeros(q)
+        values = np.linspace(np.min(data), np.max(data), q * 10)
+        j = 0
+        for i in range(q):
+            proportion = 0
+            while q * proportion < (i + 1) and j < q * 10 - 1:
+                j += 1
+                proportion = (data < values[j]).sum() / N
+            quantiles[i] = values[j]
+        return quantiles
+
+    def histogram_marginal(self,empirical_marginal,theoretical_marginal):
+        left_lim = -3
+        right_lim = 3
+        n_bins_theo = 40
+        n_bins_emp = 20
+        delta = (right_lim - left_lim) / n_bins_theo
+
+        bins_theo = np.linspace(left_lim, right_lim, n_bins_theo)
+        bins_emp = np.linspace(left_lim, right_lim, n_bins_emp)
+
+        histogram_theo = np.histogram(theoretical_marginal, bins=bins_theo)
+        frequency_theo = np.array(histogram_theo[0] / np.sum(histogram_theo[0])) / delta
+
+        histogram_emp = np.histogram(empirical_marginal, bins=bins_emp)
+        frequency_emp = np.array(histogram_emp[0] / np.sum(histogram_emp[0]))
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        ax.hist(beta[:, k], bins=bins_emp, color='gray', density=True)
+
+        ax.plot(histogram_theo[1][1:n_bins_theo] - delta / 2, frequency_theo)
+
+        plt.grid()
+
+        plt.xlabel("Beta")
+        plt.ylabel("Density")
+
+        latex_symbol = r"$\beta_{\star,j_0}$"
+
+        plt.axvline(x=true_beta[k], color='red', linestyle='dashed', linewidth=2)
+
+        plt.text(true_beta[k] + 0.25, 0.02, latex_symbol, color='red', ha='center', va='bottom', fontsize=12)
+
+        plt.savefig("Marginal_comparison.png", dpi=600)
+
+        plt.show()
+
+    def qq_plot_marginal(self):
+        quantiles_emp = self.compute_quantiles(beta[:, k], 100)
+        quantiles_theo = self.compute_quantiles(marginal.marginal_sample, 100)
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        ax.scatter(quantiles_emp[:99], quantiles_theo[:99])
+
+        ax.plot([np.min(quantiles_emp), np.max(quantiles_emp)], [np.min(quantiles_emp), np.max(quantiles_emp)],
+                color='red', linestyle='--')
+
+        plt.grid()
+
+        plt.xlabel("Empirical quantiles")
+        plt.ylabel("Theoretical quantiles")
+
+        plt.savefig("QQ plot.png", dpi=600)
+
+        plt.show()
