@@ -1,0 +1,1 @@
+from bayesian_glm.model import ModelGLM

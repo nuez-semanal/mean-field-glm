@@ -7,6 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from mean_field_glm.auxiliary import AuxiliaryFunctions
 
+from bayesian_glm.noise import NoiseComputer
 
 class ModelGLM(AuxiliaryFunctions):
     def __init__(self, p=1000, n=1000, cores = 4, chains = 4, draws=1000, tune=2000, log_likelihood="Logistic", 
@@ -102,3 +103,30 @@ class ModelGLM(AuxiliaryFunctions):
             c_bbs += np.dot(self.posterior[i],self.true_beta)/(self.draws*self.p)
 
         return v_b, c_b, c_bbs
+
+    def compute_hq(self):
+        self.check_if_sample()
+
+        fitted_values = self.data * self.posterior
+        hq_values = np.zeros(self.draws)
+
+        if self.log_likelihood == "Logistic":
+            def compute_s_theta(observations: np.ndarray, fitted_val: np.ndarray, l: int):
+                return self.indicator(observations) - self.sigmoid(fitted_val[l])
+        elif self.log_likelihood == "Linear":
+            def compute_s_theta(observations: np.ndarray, fitted_val: np.ndarray, l: int):
+                return observations - fitted_val[l]
+
+        for i in range(self.draws):
+            t, s = np.random.randint(0, self.draws, 2)
+            s_theta_1, s_theta_2 = compute_s_theta(self.observations, fitted_values, t), compute_s_theta(self.observations, fitted_values, s)
+            hq_values[i] = np.dot(s_theta_1, s_theta_2) / self.n
+
+        return np.mean(hq_values)
+
+
+    def compute_noise(self, k):
+        self.check_if_sample()
+        hq = self.compute_hq()
+        noise_computer = NoiseComputer(self,hq)
+        return noise_computer.compute_noise(k)

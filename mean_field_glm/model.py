@@ -88,7 +88,7 @@ class MeanFieldGLM(AuxiliaryFunctions):
         elif signal == "Normal":
             self.true_beta = np.sqrt(self.snr) * np.random.normal(0.0, 1.0, size=p)
         elif signal == "Beta":
-            self.true_beta = np.sqrt(self.snr) * np.random.beta(2, 2, size=p)
+            self.true_beta = np.sqrt(self.snr) * np.random.beta(2, 5, size=p)
 
         # Calculate the gamma parameter as the square root of the mean squared true_beta
         self.gamma = np.sqrt(np.mean(self.true_beta ** 2))
