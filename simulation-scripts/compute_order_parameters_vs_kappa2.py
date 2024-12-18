@@ -7,7 +7,7 @@ from mean_field_glm import block_computation
 
 def main():
     block_arguments = {"variable": "kappa",
-                       "fixed_var": 10000.0,
+                       "fixed_var": 100.0,
                        "num_per_var": 20,
                        "var_tuple": (1/10,3/10,1/2,7/10,9/10,11/10,13/10,15/10),
                        "prior": "Beta",

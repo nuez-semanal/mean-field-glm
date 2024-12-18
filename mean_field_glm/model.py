@@ -541,13 +541,13 @@ class MeanFieldGLM(AuxiliaryFunctions):
             Relative change in order parameters between consecutive iterations.
         """
         # Store current order parameters
-        old_order_parameters = np.array([self.v_b, self.c_b, self.c_bbs, self.r_1, self.r_2, self.r_3])
+        old_order_parameters = np.array([self.v_b/self.snr, self.c_b/self.snr, self.c_bbs/self.snr, self.r_1, self.r_2, self.r_3])
 
         # Perform one iteration of the Mean-Field GLM algorithm to update order parameters
         self.run_one_iteration()
 
         # Store updated order parameters after the iteration
-        new_order_parameters = np.array([self.v_b, self.c_b, self.c_bbs, self.r_1, self.r_2, self.r_3])
+        new_order_parameters = np.array([self.v_b/self.snr, self.c_b/self.snr, self.c_bbs/self.snr, self.r_1, self.r_2, self.r_3])
 
         # Compute relative change in order parameters
         stability_measure = np.linalg.norm(old_order_parameters - new_order_parameters) / np.linalg.norm(old_order_parameters)
