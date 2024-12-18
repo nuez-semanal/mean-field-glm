@@ -12,7 +12,6 @@ from bayesian_glm.noise import NoiseComputer
 class ModelGLM(AuxiliaryFunctions):
     def __init__(self, p=1000, n=1000, cores = 4, chains = 4, draws=1000, tune=2000, log_likelihood="Logistic", 
                  signal="Normal", prior="Normal", snr=1.0, seed=None):
-
         self.p, self.n, self.cores, self.chains, self.draws = p, n, cores, chains, draws
         self.tune, self.log_likelihood, self.signal = tune, log_likelihood, signal
         self.prior, self.snr = prior, snr
@@ -107,7 +106,7 @@ class ModelGLM(AuxiliaryFunctions):
     def compute_hq(self):
         self.check_if_sample()
 
-        fitted_values = self.data * self.posterior
+        fitted_values = np.matmul(self.posterior,self.data.transpose())
         hq_values = np.zeros(self.draws)
 
         if self.log_likelihood == "Logistic":
