@@ -30,7 +30,7 @@ class MeanFieldMarginalGLM:
         - betas (float): Scaling factor for the signal. Default is 0.75.
         - snr (float): Signal-to-noise ratio. Default is 1.0.
         """
-        self.parameters = parameters  # Parameters [tr, ts, tt]
+        self.parameters = parameters  # Parameters [r1, r2, r3]
         self.prior = prior  # Prior distribution for beta parameter
         self.betas = betas  # Scaling factor for the signal
         self.snr = snr  # Signal-to-noise ratio
