@@ -1,0 +1,16 @@
+{
+    "variable": "kappa",
+    "fixed_var": 100.0,
+    "num_per_var": 20,
+    "var_tuple": [
+        0.1,
+        0.3,
+        0.5,
+        0.7,
+        0.9
+    ],
+    "prior": "Beta",
+    "signal": "Beta",
+    "log_likelihood": "Logistic",
+    "bayes_optimal": false
+}
