@@ -93,7 +93,7 @@ class MseGraphCreator(BlockComputation):
         self.compute_stats()  # Compute statistics from computed data
 
         if self.variable == "kappa":
-            x = 1 / self.stats[:, 0]  # If variable is kappa we plot as function of 1/kappa
+            x = self.stats[:, 0]  # If variable is kappa we plot as function of 1/kappa
         else:
             x = self.stats[:, 0]
 
@@ -120,7 +120,7 @@ class MseGraphCreator(BlockComputation):
         plt.ylim(np.min(y-np.abs(y_error)) - 0.025 ,np.max(y+np.abs(y_error)) + 0.025)
 
         if self.variable == "kappa":
-            plt.xlabel("1/"+self.variable)
+            plt.xlabel(self.variable)
         else:
             plt.xlabel(self.variable)
 
