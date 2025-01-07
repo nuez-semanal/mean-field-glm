@@ -1,14 +1,12 @@
-import numpy as np
-from mean_field_glm.marginal import MeanFieldMarginalGLM
+from mean_field_glm.graphs import MarginalGraphCreator
 
-k = np.random.randint(900)
+def main():
 
-hq = 0.1800
-parameters = [ hq, hq, np.sqrt(hq) ]
+    marginal_graph_creator = MarginalGraphCreator()
 
-marginal = MeanFieldMarginalGLM(parameters = parameters,
-                                prior = "Normal",
-                                snr = 1.0,
-                                betas = true_beta[k],
-                                noise = noise[k])
-marginal.sample()
+    marginal_graph_creator.histogram_marginal()
+
+    marginal_graph_creator.qq_plot_marginal()
+
+if __name__ == "__main__":
+    main()

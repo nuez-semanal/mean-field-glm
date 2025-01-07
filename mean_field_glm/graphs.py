@@ -1,5 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
+from bayesian_glm.model import ModelGLM
+from mean_field_glm.marginal import MeanFieldMarginalGLM
 from mean_field_glm.block_computation import BlockComputation
 
 class MseGraphCreator(BlockComputation):
@@ -141,8 +143,21 @@ class MseGraphCreator(BlockComputation):
         plt.show()
 
 class MarginalGraphCreator:
-    def __init__(self):
-        pass
+    def __init__(self, n = 8000, p = 800, k = 10, snr = 100, prior = "Beta", signal = "Beta", log_likelihood = "Logistic",
+                 parameters = (0.168598615678669, 0.194673258882485, 0.408218682423733)):
+
+        self.model = ModelGLM(n = n, p = p, snr = snr, prior = prior, signal = signal, log_likelihood = log_likelihood)
+        self.model.draw_sample()
+        self.empirical_marginal = self.model.posterior[0]
+        self.true_beta = self.model.true_beta[k]
+        self.noise = self.model.compute_noise(k)
+        self.theoretical_model = MeanFieldMarginalGLM(parameters=parameters,
+                                        prior="Beta",
+                                        snr=100.0,
+                                        betas=self.true_beta,
+                                        noise=self.noise)
+        self.theoretical_model.sample()
+        self.theoretical_marginal = self.theoretical_model.marginal_sample
 
     @staticmethod
     def compute_quantiles(data, q):
@@ -158,7 +173,7 @@ class MarginalGraphCreator:
             quantiles[i] = values[j]
         return quantiles
 
-    def histogram_marginal(self,empirical_marginal,theoretical_marginal):
+    def histogram_marginal(self):
         left_lim = -3
         right_lim = 3
         n_bins_theo = 40
@@ -168,49 +183,34 @@ class MarginalGraphCreator:
         bins_theo = np.linspace(left_lim, right_lim, n_bins_theo)
         bins_emp = np.linspace(left_lim, right_lim, n_bins_emp)
 
-        histogram_theo = np.histogram(theoretical_marginal, bins=bins_theo)
+        histogram_theo = np.histogram(self.theoretical_marginal, bins=bins_theo)
         frequency_theo = np.array(histogram_theo[0] / np.sum(histogram_theo[0])) / delta
 
-        histogram_emp = np.histogram(empirical_marginal, bins=bins_emp)
-        frequency_emp = np.array(histogram_emp[0] / np.sum(histogram_emp[0]))
-
         fig, ax = plt.subplots(figsize=(10, 6))
-
-        ax.hist(beta[:, k], bins=bins_emp, color='gray', density=True)
-
+        ax.hist(self.empirical_marginal, bins=bins_emp, color='gray', density=True)
         ax.plot(histogram_theo[1][1:n_bins_theo] - delta / 2, frequency_theo)
 
         plt.grid()
-
         plt.xlabel("Beta")
         plt.ylabel("Density")
-
         latex_symbol = r"$\beta_{\star,j_0}$"
 
-        plt.axvline(x=true_beta[k], color='red', linestyle='dashed', linewidth=2)
-
-        plt.text(true_beta[k] + 0.25, 0.02, latex_symbol, color='red', ha='center', va='bottom', fontsize=12)
-
+        plt.axvline(x=self.true_beta, color='red', linestyle='dashed', linewidth=2)
+        plt.text(self.true_beta + 0.25, 0.02, latex_symbol, color='red', ha='center', va='bottom', fontsize=12)
         plt.savefig("Marginal_comparison.png", dpi=600)
-
         plt.show()
 
     def qq_plot_marginal(self):
-        quantiles_emp = self.compute_quantiles(beta[:, k], 100)
-        quantiles_theo = self.compute_quantiles(marginal.marginal_sample, 100)
+        quantiles_emp = self.compute_quantiles(self.empirical_marginal, 100)
+        quantiles_theo = self.compute_quantiles(self.theoretical_marginal, 100)
 
         fig, ax = plt.subplots(figsize=(10, 6))
-
         ax.scatter(quantiles_emp[:99], quantiles_theo[:99])
-
         ax.plot([np.min(quantiles_emp), np.max(quantiles_emp)], [np.min(quantiles_emp), np.max(quantiles_emp)],
                 color='red', linestyle='--')
 
         plt.grid()
-
         plt.xlabel("Empirical quantiles")
         plt.ylabel("Theoretical quantiles")
-
         plt.savefig("QQ plot.png", dpi=600)
-
         plt.show()
