@@ -95,7 +95,7 @@ class MseGraphCreator(BlockComputation):
         self.compute_stats()  # Compute statistics from computed data
 
         if self.variable == "kappa":
-            x = self.stats[:, 0]  # If variable is kappa we plot as function of 1/kappa
+            x = 1/self.stats[:, 0]  # If variable is kappa we plot as function of 1/kappa
         else:
             x = self.stats[:, 0]
 
@@ -122,7 +122,7 @@ class MseGraphCreator(BlockComputation):
         plt.ylim(np.min(y-np.abs(y_error)) - 0.025 ,np.max(y+np.abs(y_error)) + 0.025)
 
         if self.variable == "kappa":
-            plt.xlabel(self.variable)
+            plt.xlabel("1/"+self.variable)
         else:
             plt.xlabel(self.variable)
 
@@ -139,25 +139,17 @@ class MseGraphCreator(BlockComputation):
             np.savetxt("MSE_graph_data.csv", graph_data, delimiter=",")
 
         plt.legend()  # Show legend
-
         plt.show()
 
 class MarginalGraphCreator:
-    def __init__(self, n = 8000, p = 800, k = 10, snr = 100, prior = "Beta", signal = "Beta", log_likelihood = "Logistic",
-                 parameters = (0.168598615678669, 0.194673258882485, 0.408218682423733)):
-
+    def __init__(self, n = 1000, p = 500, k = 10, snr = 100, prior = "Beta", signal = "Beta", log_likelihood = "Logistic",
+                 parameters = (0.147664461882926,0.075521413608948,0.111031105872041)):
+        self.snr = snr
+        self.prior = prior
+        self.parameters = parameters
         self.model = ModelGLM(n = n, p = p, snr = snr, prior = prior, signal = signal, log_likelihood = log_likelihood)
         self.model.draw_sample()
-        self.empirical_marginal = self.model.posterior[0]
-        self.true_beta = self.model.true_beta[k]
-        self.noise = self.model.compute_noise(k)
-        self.theoretical_model = MeanFieldMarginalGLM(parameters=parameters,
-                                        prior="Beta",
-                                        snr=100.0,
-                                        betas=self.true_beta,
-                                        noise=self.noise)
-        self.theoretical_model.sample()
-        self.theoretical_marginal = self.theoretical_model.marginal_sample
+        self.change_coordinate(k)
 
     @staticmethod
     def compute_quantiles(data, q):
@@ -173,9 +165,25 @@ class MarginalGraphCreator:
             quantiles[i] = values[j]
         return quantiles
 
+    def change_coordinate(self,k):
+        self.empirical_marginal = self.model.posterior[:,k]
+        self.true_beta = self.model.true_beta[k]
+        self.noise = self.model.compute_noise(k)
+        self.theoretical_model = MeanFieldMarginalGLM(parameters=self.parameters,
+                                        prior=self.prior,
+                                        snr=self.snr,
+                                        betas=self.true_beta,
+                                        noise=self.noise)
+        self.theoretical_model.sample()
+        self.theoretical_marginal = self.theoretical_model.marginal_sample
+
     def histogram_marginal(self):
-        left_lim = -3
-        right_lim = 3
+        if self.prior == "Beta":
+            left_lim = 0.0
+            right_lim = 1.0
+        else:
+            left_lim = -3.0
+            right_lim = 3.0
         n_bins_theo = 40
         n_bins_emp = 20
         delta = (right_lim - left_lim) / n_bins_theo

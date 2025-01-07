@@ -32,7 +32,7 @@ class ModelGLM(AuxiliaryFunctions):
         elif signal == "Normal":
             self.true_beta = np.random.normal(0.0,1.0,size=p)
         elif signal == "Beta":
-            self.true_beta = np.random.normal(0.0,1.0,size=p)
+            self.true_beta = np.random.beta(2, 5, size=p)
         else:
             print("Signal argument should take either value 'Rademacher' or 'Normal'")
             raise ValueError()

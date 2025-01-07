@@ -58,7 +58,7 @@ class MeanFieldMarginalGLM:
                 z = noise
 
             # Generate observations based on the chosen prior and parameters
-            observation = np.sqrt(snr) * ts / np.sqrt(tr) * betas + np.sqrt(tt) / np.sqrt(tr) * z
+            observation = np.sqrt(snr) * ts / np.sqrt(tr) * betas + tt / np.sqrt(tr) * z
             observation = np.array([observation for i in range(self.p)])  # Repeat observation for each dimension
 
             # Likelihood of observations given beta
