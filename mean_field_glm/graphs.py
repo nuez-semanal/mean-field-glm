@@ -132,7 +132,7 @@ class MseGraphCreator(BlockComputation):
 
         # Save plot and data if save=True
         if save:
-            plt.savefig("MSE_plot.png", dpi=600)  # Save plot as PNG file
+            plt.savefig("MSE_plot.png", dpi=1200)  # Save plot as PNG file
 
             # Save graph data as CSV file
             graph_data = np.array([x, y, y_error]).transpose()
@@ -205,29 +205,32 @@ class MarginalGraphCreator:
         histogram_theo = np.histogram(self.theoretical_marginal, bins=bins_theo)
         frequency_theo = np.array(histogram_theo[0] / np.sum(histogram_theo[0])) / delta
 
-        fig, ax = plt.subplots(figsize=(10, 6))
-        ax.hist(self.empirical_marginal, bins=bins_emp, color='gray', density=True)
-        ax.plot(histogram_theo[1][1:n_bins_theo] - delta / 2, frequency_theo)
+        plt.style.use('ggplot')
+        plt.figure(figsize=(8, 6))
+        plt.hist(self.empirical_marginal, bins=bins_emp, color='green', density=True)
+        plt.plot(histogram_theo[1][1:n_bins_theo] - delta / 2, frequency_theo, color="blue")
 
-        plt.grid()
         plt.xlabel("Beta")
         plt.ylabel("Density")
+        plt.grid(color='lightgray', linestyle='--', linewidth=0.5)
 
         plt.axvline(x=self.true_beta, color='red', linestyle='dashed', linewidth=2)
-        plt.savefig("Marginal_comparison.png", dpi=600)
+        plt.savefig("Marginal_comparison.png", dpi=1200)
         plt.show()
 
     def qq_plot_marginal(self):
         quantiles_emp = self.compute_quantiles(self.empirical_marginal, 100)
         quantiles_theo = self.compute_quantiles(self.theoretical_marginal, 100)
 
-        fig, ax = plt.subplots(figsize=(10, 6))
-        ax.scatter(quantiles_emp[:99], quantiles_theo[:99])
-        ax.plot([np.min(quantiles_emp), np.max(quantiles_emp)], [np.min(quantiles_emp), np.max(quantiles_emp)],
+        plt.style.use('ggplot')
+        plt.figure(figsize=(8, 6))
+        plt.scatter(quantiles_emp[:99], quantiles_theo[:99],color="blue")
+        plt.plot([np.min(quantiles_emp), np.max(quantiles_emp)], [np.min(quantiles_emp), np.max(quantiles_emp)],
                 color='red', linestyle='--')
 
-        plt.grid()
         plt.xlabel("Empirical quantiles")
         plt.ylabel("Theoretical quantiles")
-        plt.savefig("QQ plot.png", dpi=600)
+        plt.grid(color='lightgray', linestyle='--', linewidth=0.5)
+
+        plt.savefig("QQ plot.png", dpi=1200)
         plt.show()

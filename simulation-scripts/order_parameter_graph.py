@@ -18,5 +18,5 @@ plt.ylabel("c_B", fontsize=14)
 plt.grid(color='lightgray', linestyle='--', linewidth=0.5)
 plt.minorticks_on()
 
-plt.savefig("logistics_beta_beta_order_parameters.png", dpi=600)
+plt.savefig("logistics_beta_beta_order_parameters.png", dpi=1200)
 plt.show()
