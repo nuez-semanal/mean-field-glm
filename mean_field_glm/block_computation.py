@@ -38,7 +38,7 @@ class BlockComputation:
 
     """
     def __init__(self, var_tuple= (0.1,1.0), init_params = (1.0,0.0,0.0,1e-6,0.0,0.0), variable="kappa", num_per_var=5,
-                 delta=0.001, fixed_var=1.0, prior="Normal", signal="Normal", tolerance = 0.01, max_it = 7,
+                 delta=0.001, fixed_var=1.0, prior="Normal", signal="Normal", tolerance = 0.02, max_it = 7,
                  log_likelihood = "Logistic", save=True, bayes_optimal=False, file_name = "Computed_data", seed = None):
         self.var_tuple = var_tuple
         self.num_per_var = num_per_var

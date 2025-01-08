@@ -142,18 +142,22 @@ class MseGraphCreator(BlockComputation):
         plt.show()
 
 class MarginalGraphCreator:
-    def __init__(self, n = 1000, p = 500, k = 10, snr = 100, prior = "Beta", signal = "Beta", log_likelihood = "Logistic",
-                 parameters = (0.147664461882926,0.075521413608948,0.111031105872041)):
+    def __init__(self, n = 500, p = 500, k = 10, snr = 1.0, prior = "Normal", signal = "Normal",
+                 log_likelihood = "Logistic", parameters = (0.173219994666055,0.173219994666055,0.416196903358369)):
         self.snr = snr
         self.prior = prior
         self.parameters = parameters
-        self.model = ModelGLM(n = n, p = p, snr = snr, prior = prior, signal = signal, log_likelihood = log_likelihood)
+        self.theoretical_model = self.theoretical_marginal = None
+        self.empirical_marginal = self.true_beta = self.noise = None
+        self.model = ModelGLM(n = n, p = p, snr = snr,
+                              prior = prior, signal = signal,
+                              log_likelihood = log_likelihood)
         self.model.draw_sample()
         self.change_coordinate(k)
 
     @staticmethod
     def compute_quantiles(data, q):
-        N = (data < 1e23).sum()
+        normalization = (data < 1e23).sum()
         quantiles = np.zeros(q)
         values = np.linspace(np.min(data), np.max(data), q * 10)
         j = 0
@@ -161,14 +165,11 @@ class MarginalGraphCreator:
             proportion = 0
             while q * proportion < (i + 1) and j < q * 10 - 1:
                 j += 1
-                proportion = (data < values[j]).sum() / N
+                proportion = (data < values[j]).sum() / normalization
             quantiles[i] = values[j]
         return quantiles
 
-    def change_coordinate(self,k):
-        self.empirical_marginal = self.model.posterior[:,k]
-        self.true_beta = self.model.true_beta[k]
-        self.noise = self.model.compute_noise(k)
+    def sample_theoretical_model(self):
         self.theoretical_model = MeanFieldMarginalGLM(parameters=self.parameters,
                                         prior=self.prior,
                                         snr=self.snr,
@@ -176,6 +177,16 @@ class MarginalGraphCreator:
                                         noise=self.noise)
         self.theoretical_model.sample()
         self.theoretical_marginal = self.theoretical_model.marginal_sample
+
+    def change_coordinate(self,k):
+        self.empirical_marginal = self.model.posterior[:,k]
+        self.true_beta = self.model.true_beta[k]
+        self.noise = self.model.compute_noise(k)
+        self.sample_theoretical_model()
+
+    def fix_noise_value(self,noise):
+        self.noise = noise
+        self.sample_theoretical_model()
 
     def histogram_marginal(self):
         if self.prior == "Beta":
@@ -201,10 +212,8 @@ class MarginalGraphCreator:
         plt.grid()
         plt.xlabel("Beta")
         plt.ylabel("Density")
-        latex_symbol = r"$\beta_{\star,j_0}$"
 
         plt.axvline(x=self.true_beta, color='red', linestyle='dashed', linewidth=2)
-        plt.text(self.true_beta + 0.25, 0.02, latex_symbol, color='red', ha='center', va='bottom', fontsize=12)
         plt.savefig("Marginal_comparison.png", dpi=600)
         plt.show()
 
