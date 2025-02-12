@@ -3,3 +3,4 @@ from mean_field_glm.model import MeanFieldGLM
 from mean_field_glm.graphs import MseGraphCreator
 from mean_field_glm.graphs import MarginalGraphCreator
 from mean_field_glm.marginal import MeanFieldMarginalGLM
+from mean_field_glm.mean_field_MLE import LogisticMeanFieldMLE
