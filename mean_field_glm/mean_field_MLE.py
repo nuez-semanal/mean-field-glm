@@ -86,4 +86,4 @@ class LogisticMeanFieldMLE(AuxiliaryFunctionsMLE):
         initial_values = np.array([alpha_0,sigma_0,landa_0])
         solution = fsolve(lambda X: self.loss_equations(X[0], X[1], X[2]),initial_values,xtol=tolerance,full_output=True)
         print("Output of optimisation: ",solution)
-        return solution[0]
+        return abs(solution[0])
