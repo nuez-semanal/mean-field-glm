@@ -14,7 +14,7 @@ class AuxiliaryFunctionsMLE:
     def rho_second(t):
         return 1 / (np.exp(-t / 2) + np.exp(t / 2))**2
 
-    # Because we knwo explicitely the dereivarives of rho, we can compute
+    # Because we know explicitely the derivatives of rho, we can compute
     # the value of prox_lambda(t) very fast by using Newton's method.
     def prox_newton(self, z, landa, max_iter=5, tolerance=1e-8):
         value = np.copy(z) 
@@ -79,7 +79,6 @@ class LogisticMeanFieldMLE(AuxiliaryFunctionsMLE):
             Q1, Q2 = self.compute_Q(alpha,sigma)
             prox_Q2 = self.prox_newton(Q2,landa)
             differences = self.differences_equations(sigma,landa,Q1,prox_Q2)
-            print("Value of the loss: ",np.max(np.abs(differences)))
             return differences
 
     def find_solutions(self,alpha_0 = 2.0,sigma_0 = 20.0, landa_0 = 2.0,tolerance=1e-14):
