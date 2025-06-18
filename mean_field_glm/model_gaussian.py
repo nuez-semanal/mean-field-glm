@@ -44,16 +44,13 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
         Smooth approximation parameter, only used for logistic regression. (Default: 0.01)
     seed : int, optional
         Seed for the random number generator used by NumPy. (Default: None)
-    bayes_optimal : bool, optional
-        If True, the model is assumed to be Bayes optimal, reducing the complexity of the FPEs. (Default: False)
 
     Examples
     --------
     Returns the values of the order parameters corresponding to the Bayes optimal Linear Regression model of Normal signal and prior with a signal-to-noise ratio of 5.0 and kappa of 1.0.
     """
     def __init__(self, p=1000, n=1000, kappa=None, cores = 4, chains = 4, draws=1000, tune=2000, tolerance=0.02, max_it=7, v_b=1.0, c_b=0.0, c_bbs=0.0,
-                 r_1=1e-6, r_2=0.0, r_3=0.0, log_likelihood="Logistic", snr = 1.0, signal="Normal", delta=0.01, seed=None,
-                 bayes_optimal=False):
+                 r_1=1e-6, r_2=0.0, r_3=0.0, log_likelihood="Logistic", snr = 1.0, signal="Normal", delta=0.01, seed=None):
         """
         Initialize the MeanFieldGLM class with the specified parameters.
         """
@@ -69,7 +66,7 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
         # Store the provided parameters as class attributes
         self.p, self.n, self.kappa, self.snr = p, n, kappa, snr
         self.draws, self.tune, self.chains, self.tolerance, self.max_it, self.seed, self.cores = draws, tune, chains, tolerance, max_it, seed, cores
-        self.log_likelihood, self.signal, self.delta, self.bayes_optimal = log_likelihood, signal, delta, bayes_optimal
+        self.log_likelihood, self.signal, self.delta = log_likelihood, signal, delta
         self.v_b, self.c_b, self.c_bbs, self.r_1, self.r_2, self.r_3 = v_b, c_b, c_bbs, r_1, r_2, r_3
 
         # Seed the NumPy random number generator
@@ -355,7 +352,6 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
         Update order parameters v_b, c_b, and c_bbs based on posterior samples from the first mean-field model.
 
         This method calculates and updates v_b, c_b, and c_bbs by computing specific dot products and taking their means.
-        Optionally adjusts v_b and c_b based on the bayes_optimal flag and prior distribution type.
 
         Updates
         -------
@@ -433,11 +429,6 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
         r_2 = np.mean(order_parameters[:, 2] - order_parameters[:, 3]) + self.t_gamma
         r_3 = np.sqrt(np.mean(order_parameters[:, 1]))
 
-        # If the problem is Bayes optimal, we use Nishimori identities to simplify the output
-        if self.bayes_optimal:
-            r_2 = r_1
-            r_3 = np.sqrt(r_1)
-
         # Update class attributes with computed values
         self.r_1 = r_1
         self.r_2 = r_2
@@ -479,7 +470,7 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
             Relative change in order parameters between consecutive iterations.
         """
         # Store current order parameters
-        old_order_parameters = np.array([self.v_b, self.c_b, self.c_bbs/np.sqrt(self.snr), self.r_1, self.r_2, self.r_3])
+        old_order_parameters = np.array([self.v_b, self.c_b, self.c_bbs, self.r_1, self.r_2, self.r_3])
 
         # Perform one iteration of the Mean-Field GLM algorithm to update order parameters
         self.run_one_iteration()
@@ -515,7 +506,7 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
 
             # Print progress information
             print(f"\n[{i} iteration/s out of {self.max_it} max ready. Distance achieved = {distance}]\n")
-            print("Actual values: ",self.v_b,self.c_b,self.c_bbs/np.sqrt(self.snr),self.r_1,self.r_2,self.r_3,"\n")
+            print("Actual values: ",self.v_b,self.c_b,self.c_bbs,self.r_1,self.r_2,self.r_3,"\n")
 
     def show_order_parameters(self, show=True, output=False):
         """
@@ -536,7 +527,7 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
             If both `output` and `show` are False, returns None.
         """
         if show:
-            print(self.v_b, self.c_b, self.c_bbs/np.sqrt(self.snr), self.r_1, self.r_2, self.r_3)
+            print(self.v_b, self.c_b, self.c_bbs, self.r_1, self.r_2, self.r_3)
 
         if output:
-            return [self.v_b, self.c_b, self.c_bbs/np.sqrt(self.snr), self.r_1, self.r_2, self.r_3]
+            return [self.v_b, self.c_b, self.c_bbs, self.r_1, self.r_2, self.r_3]

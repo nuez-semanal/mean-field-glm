@@ -94,14 +94,14 @@ class BlockGaussianComputation:
             model = MeanFieldGaussianGLM(kappa=variable_value,v_b=self.init_params[0],c_b=self.init_params[1],
                                  c_bbs=self.init_params[2],r_1=self.init_params[3],r_2=self.init_params[4],
                                  r_3=self.init_params[5], max_it=self.max_it, log_likelihood = self.log_likelihood,
-                                 p=2000, n=2000, delta=self.delta, tolerance=self.tolerance,
+                                 p=1000, n=1000, delta=self.delta, tolerance=self.tolerance,
                                  signal=self.signal, snr=self.fixed_var, bayes_optimal=self.bayes_optimal,
                                  seed=self.seed)
         elif self.variable == "snr":
             model = MeanFieldGaussianGLM(snr=variable_value,v_b=self.init_params[0],c_b=self.init_params[1],
                                  c_bbs=self.init_params[2],r_1=self.init_params[3],r_2=self.init_params[4],
                                  r_3=self.init_params[5], max_it=self.max_it, log_likelihood = self.log_likelihood,
-                                 p=2000, n=2000, delta=self.delta, tolerance=self.tolerance,
+                                 p=1000, n=1000, delta=self.delta, tolerance=self.tolerance,
                                  signal=self.signal, kappa=self.fixed_var, bayes_optimal=self.bayes_optimal,
                                  seed=self.seed)
         else:
