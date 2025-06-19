@@ -39,7 +39,7 @@ To handle dependencies, a poetry toml file is included in the repository.
 Use the `MeanFieldGLM` class to define your Bayesian GLM with desired parameters:
 
 ```python
-from mean_field_glm.model import MeanFieldGLM
+from mean_field_glm.model_beta import MeanFieldGLM
 
 model = MeanFieldGLM(
     p=1000,
@@ -61,20 +61,20 @@ model.show_order_parameters()
 To compute many fixed points at once, use the `BlockComputation` class:
 
 ```python
-from mean_field_glm.block_computation import BlockComputation
+from mean_field_glm.block_beta_computation import BlockComputation
 
 block = BlockComputation(
-    var_list=[0.5, 1.0, 2.0],
-    variable="kappa",
-    log_likelihood="Linear",
-    prior="Normal",
-    signal="Rademacher",
-    num_per_var = 10,
+   var_list=[0.5, 1.0, 2.0],
+   variable="kappa",
+   log_likelihood="Linear",
+   prior="Normal",
+   signal="Rademacher",
+   num_per_var=10,
 )
 
 block.compute_data()
 
-block.save_data(name = "Results of simulations")
+block.save_data(name="Results of simulations")
 ```
 
 ### 3. Generate MSE Graphs

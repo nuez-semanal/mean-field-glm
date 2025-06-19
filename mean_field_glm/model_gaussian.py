@@ -50,7 +50,7 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
     Returns the values of the order parameters corresponding to the Bayes optimal Linear Regression model of Normal signal and prior with a signal-to-noise ratio of 5.0 and kappa of 1.0.
     """
     def __init__(self, p=1000, n=1000, kappa=None, cores = 4, chains = 4, draws=1000, tune=2000, tolerance=0.02, max_it=7, v_b=1.0, c_b=0.0, c_bbs=0.0,
-                 r_1=1e-6, r_2=0.0, r_3=0.0, log_likelihood="Logistic", snr = 1.0, signal="Normal", delta=0.01, seed=None):
+                 r_1=1e-6, r_2=0.0, r_3=0.0, log_likelihood="Logistic", snr = 1.0, signal="Normal", delta=0.01, prior_sigma = 1.0, seed=None):
         """
         Initialize the MeanFieldGLM class with the specified parameters.
         """
@@ -64,7 +64,7 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
             seed = np.random.randint(1000)
 
         # Store the provided parameters as class attributes
-        self.p, self.n, self.kappa, self.snr = p, n, kappa, snr
+        self.p, self.n, self.kappa, self.snr, self.prior_sigma = p, n, kappa, snr, prior_sigma
         self.draws, self.tune, self.chains, self.tolerance, self.max_it, self.seed, self.cores = draws, tune, chains, tolerance, max_it, seed, cores
         self.log_likelihood, self.signal, self.delta = log_likelihood, signal, delta
         self.v_b, self.c_b, self.c_bbs, self.r_1, self.r_2, self.r_3 = v_b, c_b, c_bbs, r_1, r_2, r_3
@@ -363,9 +363,9 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
             Updated value of c_bbs.
         """
 
-        self.c_bbs = self.r_2/(self.r_1+1)
-        self.c_b = self.c_bbs**2 + (self.r_3/(self.r_1+1))**2
-        self.v_b = self.c_b + 1/(self.r_1+1)
+        self.c_bbs = self.r_2/(self.r_1+1.0/self.prior_sigma**2)
+        self.c_b = self.c_bbs**2 + (self.r_3/(self.r_1+1.0/self.prior_sigma**2))**2
+        self.v_b = self.c_b + 1.0/(self.r_1+1/self.prior_sigma**2)
 
     def update_order_parameters2(self):
         """

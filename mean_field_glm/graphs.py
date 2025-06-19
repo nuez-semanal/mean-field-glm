@@ -2,9 +2,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 from bayesian_glm.model import ModelGLM
 from mean_field_glm.marginal import MeanFieldMarginalGLM
-from mean_field_glm.block_computation import BlockComputation
+from mean_field_glm.block_gaussian_computation import BlockGaussianComputation
 
-class MseGraphCreator(BlockComputation):
+class MseGraphCreator(BlockGaussianComputation):
     """
     MseGraphCreator computes graphs derived from the MeanFieldGLM class.
 

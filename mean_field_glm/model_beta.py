@@ -2,7 +2,7 @@ import numpy as np
 import pymc as pm
 from mean_field_glm.auxiliary import AuxiliaryFunctions
 
-class MeanFieldGLM(AuxiliaryFunctions):
+class MeanFieldBetaGLM(AuxiliaryFunctions):
     """
     MeanFieldGLM class for Mean-Field inference in Bayesian Generalized Linear Models (GLMs).
 
@@ -55,9 +55,9 @@ class MeanFieldGLM(AuxiliaryFunctions):
     --------
     Returns the values of the order parameters corresponding to the Bayes optimal Linear Regression model of Normal signal and prior with a signal-to-noise ratio of 5.0 and kappa of 1.0.
     """
-    def __init__(self, p=1000, n=1000, kappa=None, cores = 4, chains = 4, draws=1000, tune=2000, tolerance=0.02, max_it=7, v_b=1.0, c_b=0.0, c_bbs=0.0,
-                 r_1=1e-6, r_2=0.0, r_3=0.0, log_likelihood="Logistic", signal="Normal", prior="Normal", snr=1.0, delta=0.01, seed=None,
-                 bayes_optimal=False):
+    def __init__(self, p=1000, n=1000, kappa=None, cores = 4, chains = 4, draws=1000, tune=2000, tolerance=0.02,
+                max_it=7, v_b=1.0, c_b=0.0, c_bbs=0.0, r_1=1e-6, r_2=0.0, r_3=0.0,
+                delta=0.01, seed=None, bayes_optimal=False):
         """
         Initialize the MeanFieldGLM class with the specified parameters.
         """
@@ -71,24 +71,22 @@ class MeanFieldGLM(AuxiliaryFunctions):
             seed = np.random.randint(1000)
 
         # Store the provided parameters as class attributes
-        self.p, self.n, self.snr, self.kappa = p, n, snr, kappa
-        self.draws, self.tune, self.chains, self.tolerance, self.max_it, self.seed, self.cores = draws, tune, chains, tolerance, max_it, seed, cores
-        self.log_likelihood, self.signal, self.prior, self.delta, self.bayes_optimal = log_likelihood, signal, prior, delta, bayes_optimal
-        self.v_b, self.c_b, self.c_bbs, self.r_1, self.r_2, self.r_3 = v_b, c_b, c_bbs, r_1, r_2, r_3
+        self.p, self.n, self.kappa = p, n, kappa
+        self.draws, self.tune, self.chains,  = draws, tune, chains
+        self.tolerance, self.max_it, self.cores = tolerance, max_it, cores
+        self.delta, self.bayes_optimal = delta, bayes_optimal
+        self.v_b, self.c_b, self.c_bbs  = v_b, c_b, c_bbs
+        self.r_1, self.r_2, self.r_3 = r_1, r_2, r_3
+        self.seed = seed
 
         # Seed the NumPy random number generator
         np.random.seed(seed)
 
-        # Validate the initialization arguments
-        self.check_arguments()
-
         # Initialize true_beta based on the signal type
-        if signal == "Rademacher":
-            self.true_beta = np.sqrt(self.snr) * np.sign(np.random.random(p) - 0.5)
-        elif signal == "Normal":
-            self.true_beta = np.sqrt(self.snr) * np.random.normal(0.0, 1.0, size=p)
-        elif signal == "Beta":
-            self.true_beta = np.sqrt(self.snr) * np.random.beta(2, 5, size=p)
+        if bayes_optimal:
+            self.true_beta = np.random.beta(2, 2, size=p)
+        else:
+            self.true_beta = np.random.beta(2, 5, size=p)
 
         # Calculate the gamma parameter as the square root of the mean squared true_beta
         self.gamma = np.sqrt(np.mean(self.true_beta ** 2))
@@ -104,20 +102,6 @@ class MeanFieldGLM(AuxiliaryFunctions):
 
         # Creates the mean-field models for the analyzed GLM
         self.update_mean_field_models()
-
-
-    def check_arguments(self):
-        if self.signal != "Rademacher" and self.signal != "Normal" and self.signal != "Beta":
-            print("Signal argument should take either value 'Rademacher' or 'Normal' or 'Beta'")
-            raise ValueError()
-
-        if self.prior != "Beta" and self.prior != "Normal":
-            print("Prior argument should take either value 'Beta' or 'Normal'")
-            raise ValueError()
-
-        if self.log_likelihood != "Logistic" and self.log_likelihood != "Linear":
-            print("Logl argument should take either value 'Logistic' or 'Linear'")
-            raise ValueError()
 
     def is_critical(self, xi, z, e):
         """
@@ -202,34 +186,30 @@ class MeanFieldGLM(AuxiliaryFunctions):
         float
             The computed t_gamma parameter.
         """
-        if self.log_likelihood == "Logistic":
-            # Compute constants for logistic regression
-            c = np.sqrt(self.kappa) * self.gamma
-            d = self.delta
+        # Compute constants for logistic regression
+        c = np.sqrt(self.kappa) * self.gamma
+        d = self.delta
 
-            # Define range for theta
-            range_xth = np.linspace(-5, 5, 1000)
+        # Define range for theta
+        range_xth = np.linspace(-5, 5, 1000)
 
-            # Create a grid of theta and e values
-            X = np.array([[[x_th, x_e] for x_e in np.linspace(c * x_th - 5 * d, c * x_th + 5 * d, 1000)] for x_th in range_xth])
+        # Create a grid of theta and e values
+        X = np.array([[[x_th, x_e] for x_e in np.linspace(c * x_th - 5 * d, c * x_th + 5 * d, 1000)] for x_th in range_xth])
 
-            slice_integrals = []
+        slice_integrals = []
 
-            for i in range(1000):
-                th = X[i, :][0, 0]
-                e = X[i, :][:, 1]
+        for i in range(1000):
+            th = X[i, :][0, 0]
+            e = X[i, :][:, 1]
 
-                # Compute the integrand for the given theta and e
-                y = self.gauss_density(th) * np.multiply(self.dif_tilde_t_delta(c * th - e,self.delta), self.dif_sigmoid(e))
+            # Compute the integrand for the given theta and e
+            y = self.gauss_density(th) * np.multiply(self.dif_tilde_t_delta(c * th - e,self.delta), self.dif_sigmoid(e))
 
-                # Integrate over e
-                slice_integrals.append(np.trapz(y, e))
+            # Integrate over e
+            slice_integrals.append(np.trapz(y, e))
 
-            # Integrate over theta to get t_gamma
-            return np.trapz(slice_integrals, range_xth)
-
-        elif self.log_likelihood == "Linear":
-            return 1 # The value of t_gamma for Linear Regression is equal to 1
+        # Integrate over theta to get t_gamma
+        return np.trapz(slice_integrals, range_xth)
 
     def generate_thetas(self, xi_b, xi_bs, z_bbs):
         """
@@ -268,8 +248,7 @@ class MeanFieldGLM(AuxiliaryFunctions):
         """
         self.update_mean_field_model1()
         self.update_mean_field_model2()
-        if self.log_likelihood == "Logistic":
-            self.update_mean_field_model3()
+        self.update_mean_field_model3()
 
     def update_mean_field_model1(self):
         """
@@ -280,11 +259,7 @@ class MeanFieldGLM(AuxiliaryFunctions):
         """
         with pm.Model() as self.mean_field_model1:
             # Define prior for beta based on the specified prior type
-            if self.prior == "Beta":
-                beta_no_snr = pm.Beta("beta_no_snr", alpha=2.0, beta=2.0, shape=self.p)
-            elif self.prior == "Normal":
-                beta_no_snr = pm.Normal("beta_no_snr", mu=0.0, sigma=1.0, shape=self.p)
-            beta = pm.Deterministic("beta", np.sqrt(self.snr) * beta_no_snr)
+            beta = pm.Beta("beta", alpha=2.0, beta=2.0, shape=self.p)
 
             # Generate random noise
             z = np.random.normal(0.0, 1.0, size=self.p)
@@ -311,18 +286,12 @@ class MeanFieldGLM(AuxiliaryFunctions):
             theta, theta_s = self.generate_thetas(xi_b, xi_bs, z_bbs)
 
             # Generate observations based on the type of regression
-            if self.log_likelihood == "Logistic":
-                e = self.logit(np.random.random(self.n))
-            elif self.log_likelihood == "Linear":
-                e = np.random.normal(0.0, 1.0, size=self.n)
+            e = self.logit(np.random.random(self.n))
 
             self.observations2 = theta_s - e
 
             # Define the likelihood based on the type of regression
-            if self.log_likelihood == "Logistic":
-                likelihood = pm.Bernoulli("likelihood", p=self.sigmoid(theta), observed=self.indicator(self.observations2))
-            elif self.log_likelihood == "Linear":
-                likelihood = pm.Normal("likelihood", mu=theta, sigma=1.0, observed=self.observations2)
+            likelihood = pm.Bernoulli("likelihood", p=self.sigmoid(theta), observed=self.indicator(self.observations2))
 
     def update_mean_field_model3(self):
         """
@@ -343,7 +312,7 @@ class MeanFieldGLM(AuxiliaryFunctions):
             # Define the likelihood for logistic regression
             likelihood = pm.Bernoulli("likelihood", p=self.sigmoid(theta), observed=self.indicator(self.observations3))
 
-    def draw_samples(self,num_model=None):
+    def draw_samples(self):
         """
         Draw samples from the posterior distributions of the mean-field models.
 
@@ -365,30 +334,24 @@ class MeanFieldGLM(AuxiliaryFunctions):
         self.posterior3 : np.ndarray
             Posterior samples of theta from the third mean-field model (only for logistic regression).
         """
-        if num_model is None:
-            num_model = [1, 2, 3]
 
-        if 1 in num_model:
-            # Draw samples from the first mean-field model
-            with self.mean_field_model1:
-                self.sample1 = pm.sample(cores = self.cores, draws = self.draws, chains=self.chains, progressbar=False, tune=self.tune)
-            # Extract posterior samples for beta from the first mean-field model
-            self.posterior1 = np.array(self.sample1["posterior"]["beta"][0])
+        # Draw samples from the first mean-field model
+        with self.mean_field_model1:
+            self.sample1 = pm.sample(cores = self.cores, draws = self.draws, chains=self.chains, progressbar=False, tune=self.tune)
+        # Extract posterior samples for beta from the first mean-field model
+        self.posterior1 = np.array(self.sample1["posterior"]["beta"][0])
 
-        if 2 in num_model:
-            # Draw samples from the second mean-field model
-            with self.mean_field_model2:
-                self.sample2 = pm.sample(cores = self.cores, draws = self.draws, chains=self.chains, progressbar=False, tune=self.tune)
-            # Extract posterior samples for theta from the second mean-field model
-            self.posterior2 = np.array(self.sample2["posterior"]["theta"][0])
+        # Draw samples from the second mean-field model
+        with self.mean_field_model2:
+            self.sample2 = pm.sample(cores = self.cores, draws = self.draws, chains=self.chains, progressbar=False, tune=self.tune)
+        # Extract posterior samples for theta from the second mean-field model
+        self.posterior2 = np.array(self.sample2["posterior"]["theta"][0])
 
-        if 3 in num_model:
-            # If logistic regression, draw samples from the third mean-field model
-            if self.log_likelihood == "Logistic":
-                with self.mean_field_model3:
-                    self.sample3 = pm.sample(cores = self.cores, draws = self.draws, chains=self.chains, progressbar=False, tune=self.tune)
-                # Extract posterior samples for theta from the third mean-field model
-                self.posterior3 = np.array(self.sample3["posterior"]["theta"][0])
+        # If logistic regression, draw samples from the third mean-field model
+        with self.mean_field_model3:
+            self.sample3 = pm.sample(cores = self.cores, draws = self.draws, chains=self.chains, progressbar=False, tune=self.tune)
+        # Extract posterior samples for theta from the third mean-field model
+        self.posterior3 = np.array(self.sample3["posterior"]["theta"][0])
 
     def update_order_parameters1(self):
         """
@@ -422,15 +385,22 @@ class MeanFieldGLM(AuxiliaryFunctions):
         c_b = np.mean(order_parameters[:, 1])
         c_bbs = np.mean(order_parameters[:, 2])
 
-        if self.bayes_optimal and self.prior == "Beta":
-                v_b, c_b = 0.3*self.snr, c_bbs
-        if self.bayes_optimal and self.prior == "Normal":
-                v_b, c_b = 1.0*self.snr, c_bbs
+        if self.bayes_optimal:
+            v_b, c_b = 0.3, c_bbs
 
         # Update class attributes with computed values
         self.v_b = v_b
         self.c_b = c_b
         self.c_bbs = c_bbs
+
+    def compute_s_theta(self,observations: np.ndarray, posterior: np.ndarray, l: int):
+        return self.tilde_t_delta(observations, self.delta) - self.sigmoid(posterior[l])
+
+    def compute_s_theta_star(self,observations: np.ndarray, posterior: np.ndarray, l: int):
+        return np.multiply(self.dif_tilde_t_delta(observations, self.delta), posterior[l])
+
+    def second_dif_A(self,x: float):
+        return self.dif_sigmoid(x)
 
     def update_order_parameters2(self):
         """
@@ -448,46 +418,23 @@ class MeanFieldGLM(AuxiliaryFunctions):
         self.r_3 : float
             Updated value of r_3.
         """
-        if self.log_likelihood == "Logistic":
-            def compute_s_theta(observations: np.ndarray, posterior: np.ndarray, l: int):
-                return self.tilde_t_delta(observations,self.delta) - self.sigmoid(posterior[l])
-
-            def compute_s_theta_star(observations: np.ndarray, posterior: np.ndarray, l: int):
-                return np.multiply(self.dif_tilde_t_delta(observations,self.delta), posterior[l])
-
-            def second_dif_A(x: float):
-                return self.dif_sigmoid(x)
-        elif self.log_likelihood == "Linear":
-            def compute_s_theta(observations: np.ndarray, posterior: np.ndarray, l: int):
-                return observations - posterior[l]
-
-            def compute_s_theta_star(observations: np.ndarray, posterior: np.ndarray, l: int):
-                return posterior[l]
-
-            def second_dif_A(x: np.ndarray):
-                return np.ones(len(x))
-
-            # In Linear regression, observations3 and posterior3 are just the same as
-            # observations2 and posterior2 as there is no need for critical sampling
-            # because all the functions involved are smooth
-            self.observations3 = self.observations2
-            self.posterior3 = self.posterior2
-            self.rejected_samples = self.n
 
         order_parameters = np.zeros((self.draws, 5))
 
         # Compute the dot products that define the order parameters
         for i in range(self.draws):
             t, s = np.random.randint(0, self.draws, 2)
-            s_theta_1, s_theta_2 = compute_s_theta(self.observations2, self.posterior2, t), compute_s_theta(self.observations2, self.posterior2, s)
-            s_theta_critical_1, s_theta_critical_2 = compute_s_theta(self.observations3, self.posterior3, t), compute_s_theta(self.observations3, self.posterior3, s)
-            s_theta_star_critical_1 = compute_s_theta_star(self.observations3, self.posterior3, t)
+            s_theta_1 =  self.compute_s_theta(self.observations2, self.posterior2, t)
+            s_theta_2 = self.compute_s_theta(self.observations2, self.posterior2, s)
+            s_theta_critical_1 = self.compute_s_theta(self.observations3, self.posterior3, t)
+            s_theta_critical_2 = self.compute_s_theta(self.observations3, self.posterior3, s)
+            s_theta_star_critical_1 = self.compute_s_theta_star(self.observations3, self.posterior3, t)
 
             order_parameters[i, 0] = np.dot(s_theta_1, s_theta_1) / self.n
             order_parameters[i, 1] = np.dot(s_theta_1, s_theta_2) / self.n
             order_parameters[i, 2] = np.dot(s_theta_critical_1, s_theta_star_critical_1) / self.rejected_samples
             order_parameters[i, 3] = np.dot(s_theta_critical_2, s_theta_star_critical_1) / self.rejected_samples
-            order_parameters[i, 4] = np.sum(second_dif_A(self.posterior2[i])) / self.n
+            order_parameters[i, 4] = np.sum(self.second_dif_A(self.posterior2[i])) / self.n
 
         # Calculate r_1, r_2, and r_3 as the mean of parameters computed above
         r_1 = np.mean(order_parameters[:, 4] + order_parameters[:, 1] - order_parameters[:, 0])
@@ -525,8 +472,7 @@ class MeanFieldGLM(AuxiliaryFunctions):
         self.update_mean_field_model2()
 
         # If logistic regression, update the third mean-field model also
-        if self.log_likelihood == "Logistic":
-            self.update_mean_field_model3()
+        self.update_mean_field_model3()
 
     def check_stability(self):
         """
@@ -541,13 +487,13 @@ class MeanFieldGLM(AuxiliaryFunctions):
             Relative change in order parameters between consecutive iterations.
         """
         # Store current order parameters
-        old_order_parameters = np.array([self.v_b/self.snr, self.c_b/self.snr, self.c_bbs/self.snr, self.r_1, self.r_2, self.r_3])
+        old_order_parameters = np.array([self.v_b, self.c_b, self.c_bbs, self.r_1, self.r_2, self.r_3])
 
         # Perform one iteration of the Mean-Field GLM algorithm to update order parameters
         self.run_one_iteration()
 
         # Store updated order parameters after the iteration
-        new_order_parameters = np.array([self.v_b/self.snr, self.c_b/self.snr, self.c_bbs/self.snr, self.r_1, self.r_2, self.r_3])
+        new_order_parameters = np.array([self.v_b, self.c_b, self.c_bbs, self.r_1, self.r_2, self.r_3])
 
         # Compute relative change in order parameters
         stability_measure = np.linalg.norm(old_order_parameters - new_order_parameters) / np.linalg.norm(old_order_parameters)
@@ -577,9 +523,9 @@ class MeanFieldGLM(AuxiliaryFunctions):
 
             # Print progress information
             print(f"\n[{i} iteration/s out of {self.max_it} max ready. Distance achieved = {distance}]\n")
-            print("Actual values: ",self.v_b/self.snr,self.c_b/self.snr,self.c_bbs/self.snr,self.r_1,self.r_2,self.r_3,"\n")
+            print("Actual values: ",self.v_b,self.c_b,self.c_bbs,self.r_1,self.r_2,self.r_3,"\n")
 
-    def show_order_parameters(self, show=True, output=False):
+    def show_order_parameters(self, output=False):
         """
         Display or return the current values of order parameters.
 
@@ -597,8 +543,7 @@ class MeanFieldGLM(AuxiliaryFunctions):
             If `output` is False and `show` is True, prints the values of order parameters to the console.
             If both `output` and `show` are False, returns None.
         """
-        if show:
-            print(self.v_b/self.snr, self.c_b/self.snr, self.c_bbs/self.snr, self.r_1, self.r_2, self.r_3)
+        print(self.v_b, self.c_b, self.c_bbs, self.r_1, self.r_2, self.r_3)
 
         if output:
-            return [self.v_b/self.snr, self.c_b/self.snr, self.c_bbs/self.snr, self.r_1, self.r_2, self.r_3]
+            return [self.v_b, self.c_b, self.c_bbs, self.r_1, self.r_2, self.r_3]
