@@ -7,7 +7,7 @@ import mean_field_glm as mf
 
 def main():
     block_arguments = {"variable": "kappa",
-                       "fixed_var": 1.0,
+                       "fixed_var": 4.0,
                        "num_per_var": 5,
                        "var_tuple": (0.1,0.15,0.2,0.25,0.3,0.35,0.4),
                        "signal": "Rademacher",
