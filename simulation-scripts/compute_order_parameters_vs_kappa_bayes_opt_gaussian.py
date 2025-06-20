@@ -14,7 +14,7 @@ def main():
                        "var_tuple" : (0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5),
                        "signal" : "Normal",
                        "log_likelihood" : "Logistic",
-                       "file_name" : "order_parameters_vs_kappa_gaussian"}
+                       "file_name" : "order_parameters_vs_kappa_bayes_opt_gaussian"}
 
     block = mf.block_gaussian_computation.BlockGaussianComputation(**block_arguments)
 

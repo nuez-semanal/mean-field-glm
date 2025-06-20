@@ -30,14 +30,13 @@ class BlockBetaComputation:
 
     """
     def __init__(self, var_tuple= (0.1,1.0), init_params = (1.0,0.0,0.0,1e-6,0.0,0.0), num_per_var=5,
-                 delta=0.001, fixed_var=1.0, tolerance = 0.02, max_it = 7, save=True, bayes_optimal=False,
+                 delta=0.001, tolerance = 0.02, max_it = 7, save=True, bayes_optimal=False,
                  file_name = "Computed_data", seed = None):
         self.var_tuple = var_tuple
         self.num_per_var = num_per_var
         self.max_it = max_it
         self.init_params = init_params
         self.delta = delta
-        self.fixed_var = fixed_var
         self.save = save
         self.bayes_optimal = bayes_optimal
         self.file_name = file_name
@@ -87,7 +86,7 @@ class BlockBetaComputation:
         data_index = n + self.num_per_var * i
         data[data_index, 0] = model.seed
         data[data_index, 1] = variable_value
-        data[data_index, 2] = self.fixed_var
+        data[data_index, 2] = 1.0
 
         for j in range(6):
             data[data_index, j + 3] = order_parameters[j]
