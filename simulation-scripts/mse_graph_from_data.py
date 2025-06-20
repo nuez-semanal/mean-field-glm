@@ -5,7 +5,7 @@ import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from mean_field_glm.graphs import MseGraphCreator
+from mean_field_glm.graphs import MseGraphGaussianCreator
 
 
 def main():
@@ -18,7 +18,7 @@ def main():
 
     data = np.loadtxt("./simulation-results/" + file_name + ".csv",delimiter=",")
 
-    graph_creator = MseGraphCreator(**graph_arguments)
+    graph_creator = MseGraphGaussianCreator(**graph_arguments)
     graph_creator.data = data
     graph_creator.plot_graph_mse(save=True)
 

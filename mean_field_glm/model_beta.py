@@ -84,7 +84,7 @@ class MeanFieldBetaGLM(AuxiliaryFunctions):
 
         # Initialize true_beta based on the signal type
         if bayes_optimal:
-            self.true_beta = np.random.beta(2, 2, size=p)
+            self.true_beta = np.random.beta(2, 2, size=p) - 0.5
         else:
             self.true_beta = np.random.beta(2, 5, size=p)
 
@@ -259,7 +259,8 @@ class MeanFieldBetaGLM(AuxiliaryFunctions):
         """
         with pm.Model() as self.mean_field_model1:
             # Define prior for beta based on the specified prior type
-            beta = pm.Beta("beta", alpha=2.0, beta=2.0, shape=self.p)
+            beta_not_cent = pm.Beta("beta_not_cent", alpha=2.0, beta=2.0, shape=self.p)
+            beta = pm.Deterministic("beta",beta_not_cent-0.5)
 
             # Generate random noise
             z = np.random.normal(0.0, 1.0, size=self.p)

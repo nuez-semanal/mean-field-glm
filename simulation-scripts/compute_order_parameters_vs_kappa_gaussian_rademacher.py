@@ -5,19 +5,20 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import mean_field_glm as mf
 
+# prior_sigma is snr + 3.0
+
 def main():
     block_arguments = {"variable": "kappa",
                        "fixed_var": 4.0,
-                       "num_per_var": 10,
+                       "num_per_var": 5,
                        "var_tuple": (0.1,0.15,0.2,0.25,0.3,0.35,0.4),
-                       "prior": "Normal",
-                       "signal": "Normal",
+                       "signal": "Rademacher",
                        "log_likelihood": "Logistic",
-                       "file_name": "order_parameters_vs_kappa_mismatch",
-                       "bayes_optimal": False}
+                       "file_name": "order_parameters_vs_kappa_mismatch"}
 
-    block = mf.block_computation.BlockComputation(**block_arguments)
+    block = mf.block_gaussian_computation.BlockGaussianComputation(**block_arguments)
     block.compute_data()
+
 
 if __name__ == "__main__":
     main()

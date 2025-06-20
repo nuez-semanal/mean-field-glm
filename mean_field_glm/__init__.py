@@ -2,7 +2,7 @@ from mean_field_glm.block_beta_computation import BlockBetaComputation
 from mean_field_glm.block_gaussian_computation import BlockGaussianComputation
 from mean_field_glm.model_beta import MeanFieldBetaGLM
 from mean_field_glm.model_gaussian import MeanFieldGaussianGLM
-from mean_field_glm.graphs import MseGraphCreator
+from mean_field_glm.graphs import MseGraphGaussianCreator
 from mean_field_glm.graphs import MarginalGraphCreator
 from mean_field_glm.marginal import MeanFieldMarginalGLM
 from mean_field_glm.mean_field_MLE import LogisticMeanFieldMLE

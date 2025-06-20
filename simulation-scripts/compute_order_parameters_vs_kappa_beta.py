@@ -5,8 +5,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from mean_field_glm import block_beta_computation
 
-# 6/2,8/10,1.0
-
 def main():
     block_arguments = {"variable": "kappa",
                        "fixed_var": 1.0,

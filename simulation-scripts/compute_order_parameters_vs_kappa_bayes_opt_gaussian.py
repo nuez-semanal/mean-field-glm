@@ -5,6 +5,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import mean_field_glm as mf
 
+# prior_sigma is equal to snr
+
 def main():
     block_arguments = {"variable" : "kappa",
                        "fixed_var" : 4.0,
