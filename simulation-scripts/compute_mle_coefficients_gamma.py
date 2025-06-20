@@ -15,8 +15,10 @@ for i, gamma in enumerate(gamma_list):
     for j in range(5):
         model = LogisticMeanFieldMLE(kappa=0.1,gamma=gamma)
         iterations[j,:] = model.find_solutions()
-    solutions_stats[i,:2] = np.mean(iterations[:,0]), np.std(iterations[:,0])
-    solutions_stats[i,2:] = np.mean(iterations[:,1]), np.std(iterations[:,1])
+    solutions_stats[i,0] = np.mean(iterations[:,0])
+    solutions_stats[i,1] = np.std(iterations[:,0])
+    solutions_stats[i,2] = np.mean(iterations[:,1])
+    solutions_stats[i,3] = np.std(iterations[:,1])
     print("\n[ ----- Done with gamma = ",gamma," ----- ]\n")
 
 np.savetxt("MLE_simulations_gamma.csv",solutions_stats,delimiter=",")
