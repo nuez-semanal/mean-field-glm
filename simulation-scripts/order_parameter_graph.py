@@ -1,12 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-file_path = "./simulation-results/logistic_beta_beta_kappa_graph_data.csv"
+file_path = "./simulation-results/order_parameters_vs_kappa_beta.csv"
 data = np.loadtxt(file_path, delimiter=',')
 
-kappa = 1 / data[:, 0]  # x-values
-c_b = data[:, 1]        # y-values
-y_error = data[:, 2]   # y-error
+kappa = 1 / data[:, 0]
+c_b = data[:, 1]
+y_error = data[:, 2]
 
 plt.style.use('ggplot')
 plt.figure(figsize=(8, 6))
@@ -18,5 +18,5 @@ plt.ylabel("c_B", fontsize=14)
 plt.grid(color='lightgray', linestyle='--', linewidth=0.5)
 plt.minorticks_on()
 
-plt.savefig("logistics_beta_beta_order_parameters.png", dpi=1200)
+plt.savefig("order_parameters_vs_kappa_beta_C_B.png", dpi=1200)
 plt.show()

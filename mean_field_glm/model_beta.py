@@ -259,8 +259,7 @@ class MeanFieldBetaGLM(AuxiliaryFunctions):
         """
         with pm.Model() as self.mean_field_model1:
             # Define prior for beta based on the specified prior type
-            beta_not_cent = pm.Beta("beta_not_cent", alpha=2.0, beta=2.0, shape=self.p)
-            beta = pm.Deterministic("beta",beta_not_cent-0.5)
+            beta = pm.Beta("beta", alpha=2.0, beta=2.0, shape=self.p)
 
             # Generate random noise
             z = np.random.normal(0.0, 1.0, size=self.p)

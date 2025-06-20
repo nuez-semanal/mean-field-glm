@@ -5,6 +5,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from mean_field_glm.graphs import MarginalGraphCreator
 
+# Values of parameters fixed by results of simulations from "compute_order_parameters_vs_kappa_beta.py"
+
 def main():
 
     # Parameters correspond to (r1,r2,r3) for Beta(2,5) signal, Beta(2,2) prior, SNR = 10.0, and kappa = 1.0

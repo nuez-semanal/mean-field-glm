@@ -27,12 +27,12 @@ class MeanFieldMarginalGLM:
         Parameters:
         - parameters (list): List of parameters [tr, ts, tt].
         - prior (str): Prior distribution for beta parameter ('Beta' or 'Normal'). Default is 'Normal'.
-        - betas (float): Scaling factor for the signal. Default is 0.75.
+        - betas (float): Signal to be used to compare with samples. Default is 0.75.
         - snr (float): Signal-to-noise ratio. Default is 1.0.
         """
         self.parameters = parameters  # Parameters [r1, r2, r3]
         self.prior = prior  # Prior distribution for beta parameter
-        self.betas = betas  # Scaling factor for the signal
+        self.betas = betas  # Signal to be used to compare with samples
         self.snr = snr  # Signal-to-noise ratio
         self.p = 1000  # Dimensionality of beta parameter (fixed at 1000)
 
