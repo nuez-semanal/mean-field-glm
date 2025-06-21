@@ -48,7 +48,7 @@ class MseGraphGaussianCreator(BlockGaussianComputation):
 
     """
     def __init__(self, var_tuple= (0.1,1.0), init_params = (1.0,0.0,0.0,1e-6,0.0,0.0), variable="kappa", num_per_var=5,
-                 delta=1.0, fixed_var=1.0, signal="Normal", tolerance = 0.01, max_it = 7,
+                 delta=1.0, fixed_var=1.0, signal="Normal", tolerance = 0.01, max_it = 7, normalise = False,
                  log_likelihood = "Logistic", save=True, bayes_optimal=False,file_name="Computed_data"):
         super().__init__(var_tuple=var_tuple, init_params=init_params, variable=variable,
                          num_per_var=num_per_var,delta=delta, fixed_var=fixed_var,
@@ -56,6 +56,7 @@ class MseGraphGaussianCreator(BlockGaussianComputation):
                          save=save, bayes_optimal=bayes_optimal, file_name=file_name)
 
         self.data = np.loadtxt("./simulation-results/"+file_name+".csv",delimiter=",")
+        self.normalise = normalise
 
         self.stats = None
 
@@ -100,7 +101,7 @@ class MseGraphGaussianCreator(BlockGaussianComputation):
         x = self.stats[:, 0]
 
         # Determine y values and errors based on prior type
-        if self.variable == "snr":
+        if self.variable == "gamma":
             y = np.array(self.var_tuple)**2 * np.ones_like(self.stats[:, 1]) # MSE initialization for Normal prior
         else:
             y = np.ones_like(self.stats[:, 1])
@@ -112,8 +113,9 @@ class MseGraphGaussianCreator(BlockGaussianComputation):
             y += self.stats[:, 1] - 2 * self.stats[:, 3]  # MSE calculation for non Bayes optimal model
             y_error = (self.stats[:,2] + 2 * self.stats[:, 4]) / self.num_per_var ** (1 / 4)  # Error bars for non Bayes optimal model
 
-        y = y / x**2
-        y_error = y_error / x**2
+        if self.normalise:
+            y = y / x**2
+            y_error = y_error / x**2
 
         x_error = np.zeros_like(x)  # No x-error for this plot
 
@@ -126,8 +128,11 @@ class MseGraphGaussianCreator(BlockGaussianComputation):
 
         plt.xlabel(self.variable)
 
-        plt.ylabel('MSE / gamma^2')
-        #plt.ylabel('MSE')
+        if self.normalise:
+            plt.ylabel('MSE / gamma^2')
+        else:
+            plt.ylabel('MSE')
+
         plt.grid(color='lightgray', linestyle='--', linewidth=0.5)
         plt.minorticks_on()
 
