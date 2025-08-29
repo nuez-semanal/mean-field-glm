@@ -14,7 +14,7 @@ def commit_results():
     os.system("git push")
 
 
-##### SIMULATION PARAMETERS 1  #####
+##### SIMULATION PARAMETERS 1 #####
 
 n_iter = 10
 kappa_values = (0.1 ,0.2 ,0.3 ,0.4 ,0.5 ,0.6 ,0.7 ,0.8 ,0.9 ,1.0)
