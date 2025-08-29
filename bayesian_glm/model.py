@@ -11,10 +11,10 @@ from bayesian_glm.noise import NoiseComputer
 
 class ModelGLM(AuxiliaryFunctions):
     def __init__(self, p=1000, n=1000, cores = 4, chains = 4, draws=1000, tune=2000, log_likelihood="Logistic", 
-                 signal="Normal", prior="Normal", snr=1.0, seed=None):
+                 signal="Normal", prior="Normal", gamma=1.0, sigma=1.0, seed=None):
         self.p, self.n, self.cores, self.chains, self.draws = p, n, cores, chains, draws
         self.tune, self.log_likelihood, self.signal = tune, log_likelihood, signal
-        self.prior, self.snr = prior, snr
+        self.prior, self.gamma, self.sigma = prior, gamma, sigma
                     
         # Here I generate the Gaussian data available
         if seed is None:
@@ -28,9 +28,9 @@ class ModelGLM(AuxiliaryFunctions):
         self.log_likelihood = log_likelihood
 
         if signal == "Rademacher":
-            self.true_beta = np.sign(2*np.random.random(p)-1)
+            self.true_beta = gamma * np.sign(2*np.random.random(p)-1)
         elif signal == "Normal":
-            self.true_beta = np.random.normal(0.0,1.0,size=p)
+            self.true_beta = gamma * np.random.normal(0.0,1.0,size=p)
         elif signal == "Beta":
             self.true_beta = np.random.beta(2, 5, size=p)
         else:
@@ -42,10 +42,10 @@ class ModelGLM(AuxiliaryFunctions):
         # Observations available
         if log_likelihood == "Logistic":
             self.noise = self.logit(np.random.random(size=n))
-            self.observations = self.indicator(np.sqrt(snr)*true_projections-self.noise)
+            self.observations = self.indicator(true_projections-self.noise)
         elif log_likelihood == "Linear":
             self.noise = np.random.normal(size=n)
-            self.observations = np.sqrt(snr)*true_projections-self.noise
+            self.observations = true_projections-self.noise
         self.sample = None
         self.posterior = None
 
@@ -58,7 +58,7 @@ class ModelGLM(AuxiliaryFunctions):
             if prior == "Beta":
                 beta = pm.Beta("beta", alpha = 2.0, beta = 2.0, shape=p)
             elif prior == "Normal":
-                beta = pm.Normal("beta",mu=0.0,sigma=1.0,shape=p)
+                beta = pm.Normal("beta",mu=0.0,sigma=self.sigma,shape=p)
             else:
                 print("Prior argument should take either value 'Beta' or 'Normal'")
                 raise ValueError()
@@ -66,13 +66,13 @@ class ModelGLM(AuxiliaryFunctions):
             # Here I compute the fitted values
             fitted_values = pm.math.dot(X, beta)
 
-            proba = pm.Deterministic('proba', pm.math.invlogit(np.sqrt(snr)*fitted_values))
+            proba = pm.Deterministic('proba', pm.math.invlogit(fitted_values))
 
             # Here I define the likelihood for a logistic regression model
             if self.log_likelihood == "Logistic":
                 likelihood = pm.Bernoulli("likelihood",p=proba,observed=y)
             elif self.log_likelihood == "Linear":
-                likelihood = pm.Normal("likelihood",mu = np.sqrt(snr)*fitted_values,observed=y)
+                likelihood = pm.Normal("likelihood",mu = fitted_values,observed=y)
 
     def draw_sample(self):
         with self.model:
