@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-file_path = "./simulation-results/order_parameters_vs_kappa_beta.csv"
+file_path = "./simulation-results/order_parameters_vs_kappa_beta_old.csv"
 data = np.loadtxt(file_path, delimiter=',')
 
 kappa = 1 / data[:, 0]

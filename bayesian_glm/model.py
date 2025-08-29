@@ -5,7 +5,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from mean_field_glm.auxiliary import AuxiliaryFunctions
+from bayesian_glm.auxiliary import AuxiliaryFunctions
 
 from bayesian_glm.noise import NoiseComputer
 
@@ -52,8 +52,8 @@ class ModelGLM(AuxiliaryFunctions):
         # Here I define the logistic regression model in PyMC
         with pm.Model() as self.model:
 
-            X = pm.MutableData("X", self.data)
-            y = pm.MutableData("y", self.observations)
+            X = pm.Data("X", self.data)
+            y = pm.Data("y", self.observations)
 
             if prior == "Beta":
                 beta = pm.Beta("beta", alpha = 2.0, beta = 2.0, shape=p)

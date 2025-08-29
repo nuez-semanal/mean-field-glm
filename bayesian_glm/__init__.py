@@ -1,1 +1,2 @@
-from bayesian_glm.model import ModelGLM
+from .model import ModelGLM
+from .auxiliary import AuxiliaryFunctions

@@ -4,7 +4,7 @@ import os
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from mean_field_glm.auxiliary import AuxiliaryFunctions
+from bayesian_glm.auxiliary import AuxiliaryFunctions
 
 class NoiseComputer(AuxiliaryFunctions):
     def __init__(self, model, hq ):
