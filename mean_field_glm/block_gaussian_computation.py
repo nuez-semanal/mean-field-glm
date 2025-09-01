@@ -57,6 +57,11 @@ class BlockGaussianComputation:
         self.data = None
         self.tolerance = tolerance
 
+        if self.bayes_optimal:
+            self.dif_snr = 0.0
+        else:
+            self.dif_snr = 3.0
+
     def compute_data(self):
         """
         Computes many fixed points based on the specified variable and its values.
@@ -95,14 +100,14 @@ class BlockGaussianComputation:
                                  c_bbs=self.init_params[2],r_1=self.init_params[3],r_2=self.init_params[4],
                                  r_3=self.init_params[5], max_it=self.max_it, log_likelihood = self.log_likelihood,
                                  p=1000, n=1000, delta=self.delta, tolerance=self.tolerance,
-                                 signal=self.signal, snr=self.fixed_var, prior_sigma=self.fixed_var+3.0,
+                                 signal=self.signal, snr=self.fixed_var, prior_sigma=self.fixed_var+self.dif_snr,
                                  seed=self.seed)
         elif self.variable == "snr":
             model = MeanFieldGaussianGLM(snr=variable_value,v_b=self.init_params[0],c_b=self.init_params[1],
                                  c_bbs=self.init_params[2],r_1=self.init_params[3],r_2=self.init_params[4],
                                  r_3=self.init_params[5], max_it=self.max_it, log_likelihood = self.log_likelihood,
                                  p=1000, n=1000, delta=self.delta, tolerance=self.tolerance,
-                                 signal=self.signal, kappa=self.fixed_var,prior_sigma=variable_value+3.0,
+                                 signal=self.signal, kappa=self.fixed_var,prior_sigma=variable_value+self.dif_snr,
                                  seed=self.seed)
         else:
             raise ValueError(f"Unsupported variable type: {self.variable}")

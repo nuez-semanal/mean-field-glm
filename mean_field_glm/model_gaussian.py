@@ -50,7 +50,7 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
     Returns the values of the order parameters corresponding to the Bayes optimal Linear Regression model of Normal signal and prior with a signal-to-noise ratio of 5.0 and kappa of 1.0.
     """
     def __init__(self, p=1000, n=1000, kappa=None, cores = 4, chains = 4, draws=1000, tune=2000, tolerance=0.02, max_it=7, v_b=1.0, c_b=0.0, c_bbs=0.0,
-                 r_1=1e-6, r_2=0.0, r_3=0.0, log_likelihood="Logistic", snr = 1.0, signal="Normal", delta=0.01, prior_sigma = 1.0, seed=None):
+                 r_1=1e-6, r_2=0.0, r_3=0.0, log_likelihood="Logistic", snr = 1.0, signal="Normal", delta=0.001, prior_sigma = 1.0, seed=None):
         """
         Initialize the MeanFieldGLM class with the specified parameters.
         """
@@ -266,9 +266,10 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
         This model involves generating theta and theta_s values and updating the PyMC model
         based on the type of regression (Logistic or Linear).
         """
-        with pm.Model() as self.mean_field_model2:
+        with (pm.Model() as self.mean_field_model2):
             # Generate random normal variables for theta computation
-            z_bbs = xi_bs = np.random.normal(0, 1, size=self.n)
+            z_bbs = np.random.normal(0, 1, size=self.n)
+            xi_bs = np.random.normal(0, 1, size=self.n)
             xi_b = pm.Normal("xi_b", shape=self.n)
 
             # Generate theta and theta_s values
@@ -363,8 +364,8 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
             Updated value of c_bbs.
         """
 
-        self.c_bbs = self.r_2/(self.r_1+1.0/self.prior_sigma**2)
-        self.c_b = self.c_bbs**2 + (self.r_3/(self.r_1+1.0/self.prior_sigma**2))**2
+        self.c_bbs = self.r_2*self.gamma**2/(self.r_1+1.0/self.prior_sigma**2)
+        self.c_b = (self.r_2*self.gamma/(self.r_1+1.0/self.prior_sigma**2))**2 + (self.r_3/(self.r_1+1.0/self.prior_sigma**2))**2
         self.v_b = self.c_b + 1.0/(self.r_1+1/self.prior_sigma**2)
 
     def update_order_parameters2(self):
