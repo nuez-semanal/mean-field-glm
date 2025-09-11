@@ -30,12 +30,12 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
         Initial value for the critical quantity 'c_b'. (Default: 0.0)
     c_bbs : float, optional
         Initial value for the critical quantity 'c_bbs'. (Default: 0.0)
-    r_1 : float, optional
-        Initial value for the critical quantity 'r_1'. (Default: 1e-6)
-    r_2 : float, optional
-        Initial value for the critical quantity 'r_2'. (Default: 0.0)
-    r_3 : float, optional
-        Initial value for the critical quantity 'r_3'. (Default: 0.0)
+    v : float, optional
+        Initial value for the critical quantity 'v'. (Default: 1e-6)
+    alpha : float, optional
+        Initial value for the critical quantity 'alpha'. (Default: 0.0)
+    sigma : float, optional
+        Initial value for the critical quantity 'sigma'. (Default: 0.0)
     log_likelihood : str, optional
         Type of GLM to consider. Must be "Logistic" or "Linear". (Default: "Logistic")
     signal : str, optional
@@ -49,8 +49,8 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
     --------
     Returns the values of the order parameters corresponding to the Bayes optimal Linear Regression model of Normal signal and prior with a signal-to-noise ratio of 5.0 and kappa of 1.0.
     """
-    def __init__(self, p=1000, n=1000, kappa=None, cores = 4, chains = 4, draws=1000, tune=2000, tolerance=0.02, max_it=7, v_b=1.0, c_b=0.0, c_bbs=0.0,
-                 r_1=1e-6, r_2=0.0, r_3=0.0, log_likelihood="Logistic", snr = 1.0, signal="Normal", delta=0.001, prior_sigma = 1.0, seed=None):
+    def __init__(self, p=1000, n=1000, kappa=None, cores = 4, chains = 4, draws=1000, tune=2000, tolerance=0.02, max_it=7,
+                 log_likelihood="Logistic", gamma = 1.0, signal="Normal", delta=0.001, prior_std = 1.0, seed=None):
         """
         Initialize the MeanFieldGLM class with the specified parameters.
         """
@@ -64,10 +64,10 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
             seed = np.random.randint(1000)
 
         # Store the provided parameters as class attributes
-        self.p, self.n, self.kappa, self.snr, self.prior_sigma = p, n, kappa, snr, prior_sigma
+        self.p, self.n, self.kappa, self.gamma, self.prior_std = p, n, kappa, gamma, prior_std
         self.draws, self.tune, self.chains, self.tolerance, self.max_it, self.seed, self.cores = draws, tune, chains, tolerance, max_it, seed, cores
         self.log_likelihood, self.signal, self.delta = log_likelihood, signal, delta
-        self.v_b, self.c_b, self.c_bbs, self.r_1, self.r_2, self.r_3 = v_b, c_b, c_bbs, r_1, r_2, r_3
+        self.v_b, self.c_b, self.c_bbs, self.v, self.alpha, self.sigma = 1.0, 0.0, 0.0, prior_std**2, 0.0, 0.0
 
         # Seed the NumPy random number generator
         np.random.seed(seed)
@@ -77,14 +77,12 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
 
         # Initialize true_beta based on the signal type
         if signal == "Rademacher":
-            self.true_beta = np.sqrt(self.snr) * np.sign(np.random.random(p) - 0.5)
+            self.true_beta = self.gamma * np.sign(np.random.random(p) - 0.5)
         elif signal == "Normal":
-            self.true_beta = np.sqrt(self.snr) * np.random.normal(0.0, 1.0, size=p)
+            self.true_beta = self.gamma * np.random.normal(0.0, 1.0, size=p)
         elif signal == "Beta":
-            self.true_beta = np.sqrt(self.snr) * np.random.beta(2, 5, size=p)
-
-        # Calculate the gamma parameter as the square root of the mean squared true_beta
-        self.gamma = np.sqrt(np.mean(self.true_beta ** 2))
+            self.true_beta = np.random.beta(2, 5, size=p)
+            self.gamma = np.sqrt(np.mean(self.true_beta ** 2))
 
         # Initialize placeholders for MCMC samples and posteriors
         self.sample1 = self.posterior1 = self.sample2 = self.posterior2 = self.sample3 = self.posterior3 = None
@@ -195,27 +193,23 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
             # Compute constants for logistic regression
             c = np.sqrt(self.kappa) * self.gamma
             d = self.delta
-
             # Define range for theta
             range_xth = np.linspace(-5, 5, 1000)
-
             # Create a grid of theta and e values
             X = np.array([[[x_th, x_e] for x_e in np.linspace(c * x_th - 5 * d, c * x_th + 5 * d, 1000)] for x_th in range_xth])
-
             slice_integrals = []
-
             for i in range(1000):
                 th = X[i, :][0, 0]
                 e = X[i, :][:, 1]
-
                 # Compute the integrand for the given theta and e
                 y = self.gauss_density(th) * np.multiply(self.dif_tilde_t_delta(c * th - e,self.delta), self.dif_sigmoid(e))
-
                 # Integrate over e
                 slice_integrals.append(np.trapz(y, e))
-
             # Integrate over theta to get t_gamma
             return np.trapz(slice_integrals, range_xth)
+#            Z = np.random.normal(loc=0.0,scale=np.sqrt(self.kappa)*self.gamma,size=1000000)
+#            e = self.logit(np.random.random(1000000))
+#            return np.mean(self.dif_tilde_t_delta(x=Z-e,delta=0.001))
 
         elif self.log_likelihood == "Linear":
             return 1 # The value of t_gamma for Linear Regression is equal to 1
@@ -364,25 +358,25 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
             Updated value of c_bbs.
         """
 
-        self.c_bbs = self.r_2*self.gamma**2/(self.r_1+1.0/self.prior_sigma**2)
-        self.c_b = (self.r_2*self.gamma/(self.r_1+1.0/self.prior_sigma**2))**2 + (self.r_3/(self.r_1+1.0/self.prior_sigma**2))**2
-        self.v_b = self.c_b + 1.0/(self.r_1+1/self.prior_sigma**2)
+        self.c_bbs = self.alpha * self.gamma**2
+        self.c_b = self.alpha**2 * self.gamma**2 + self.sigma**2
+        self.v_b = self.c_b + self.v
 
     def update_order_parameters2(self):
         """
-        Update order parameters r_1, r_2, and r_3 based on posterior samples from mean-field models.
+        Update order parameters v, alpha, and sigma based on posterior samples from mean-field models.
 
-        This method calculates and updates r_1, r_2, and r_3 by computing dot products and taking their means
+        This method calculates and updates v, alpha, and sigma by computing dot products and taking their means
         from posterior samples of the mean-field models 2 and optionally 3 (if logistic regression).
 
         Updates
         -------
-        self.r_1 : float
-            Updated value of r_1.
-        self.r_2 : float
-            Updated value of r_2.
-        self.r_3 : float
-            Updated value of r_3.
+        self.v : float
+            Updated value of v.
+        self.alpha : float
+            Updated value of alpha.
+        self.sigma : float
+            Updated value of sigma.
         """
         if self.log_likelihood == "Logistic":
             def compute_s_theta(observations: np.ndarray, posterior: np.ndarray, l: int):
@@ -425,15 +419,15 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
             order_parameters[i, 3] = np.dot(s_theta_critical_2, s_theta_star_critical_1) / self.rejected_samples
             order_parameters[i, 4] = np.sum(second_dif_A(self.posterior2[i])) / self.n
 
-        # Calculate r_1, r_2, and r_3 as the mean of parameters computed above
-        r_1 = np.mean(order_parameters[:, 4] + order_parameters[:, 1] - order_parameters[:, 0])
-        r_2 = np.mean(order_parameters[:, 2] - order_parameters[:, 3]) + self.t_gamma
-        r_3 = np.sqrt(np.mean(order_parameters[:, 1]))
+        # Calculate v, alpha, and sigma as the mean of parameters computed above
+        v = 1.0/(np.mean(order_parameters[:, 4] + order_parameters[:, 1] - order_parameters[:, 0]) + 1.0/self.prior_std**2)
+        alpha = (np.mean(order_parameters[:, 2] - order_parameters[:, 3]) + self.t_gamma) * v
+        sigma = np.sqrt(np.mean(order_parameters[:, 1])) * v
 
         # Update class attributes with computed values
-        self.r_1 = r_1
-        self.r_2 = r_2
-        self.r_3 = r_3
+        self.v = v
+        self.alpha = alpha
+        self.sigma = sigma
 
     def run_one_iteration(self):
         """
@@ -441,7 +435,7 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
 
         This method executes one iteration of the Mean-Field GLM algorithm, which involves the following steps:
         1. Draw posterior samples from mean-field models.
-        2. Update order parameters v_b, c_b, c_bbs, r_1, r_2, r_3 based on the drawn samples.
+        2. Update order parameters v_b, c_b, c_bbs, v, alpha, sigma based on the drawn samples.
         3. Update parameters and likelihoods of mean-field models based on the updated order parameters.
         """
         # Step 1: Draw samples from posterior distributions of mean-field models
@@ -462,7 +456,7 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
         """
         Check stability of order parameters across iterations.
 
-        This method checks the stability of order parameters (v_b, c_b, c_bbs, r_1, r_2, r_3) across iterations
+        This method checks the stability of order parameters (v_b, c_b, c_bbs, v, alpha, sigma) across iterations
         by computing the relative change in their values before and after running one iteration of the Mean-Field GLM algorithm.
 
         Returns
@@ -471,13 +465,13 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
             Relative change in order parameters between consecutive iterations.
         """
         # Store current order parameters
-        old_order_parameters = np.array([self.v_b, self.c_b, self.c_bbs, self.r_1, self.r_2, self.r_3])
+        old_order_parameters = np.array([self.v_b, self.c_b, self.c_bbs, self.v, self.alpha, self.sigma])
 
         # Perform one iteration of the Mean-Field GLM algorithm to update order parameters
         self.run_one_iteration()
 
         # Store updated order parameters after the iteration
-        new_order_parameters = np.array([self.v_b, self.c_b, self.c_bbs, self.r_1, self.r_2, self.r_3])
+        new_order_parameters = np.array([self.v_b, self.c_b, self.c_bbs, self.v, self.alpha, self.sigma])
 
         # Compute relative change in order parameters
         stability_measure = np.linalg.norm(old_order_parameters - new_order_parameters) / np.linalg.norm(old_order_parameters)
@@ -507,7 +501,7 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
 
             # Print progress information
             print(f"\n[{i} iteration/s out of {self.max_it} max ready. Distance achieved = {distance}]\n")
-            print("Actual values: ",self.v_b,self.c_b,self.c_bbs,self.r_1,self.r_2,self.r_3,"\n")
+            print("Actual values: ",self.v_b,self.c_b,self.c_bbs,self.v,self.alpha,self.sigma,"\n")
 
     def show_order_parameters(self, show=True, output=False):
         """
@@ -523,12 +517,12 @@ class MeanFieldGaussianGLM(AuxiliaryFunctions):
         Returns
         -------
         list or None
-            If `output` is r_1ue, returns a list containing the values of order parameters [v_b, c_b, c_bbs, r_1, r_2, r_3].
+            If `output` is vue, returns a list containing the values of order parameters [v_b, c_b, c_bbs, v, alpha, sigma].
             If `output` is False and `show` is True, prints the values of order parameters to the console.
             If both `output` and `show` are False, returns None.
         """
         if show:
-            print(self.v_b, self.c_b, self.c_bbs, self.r_1, self.r_2, self.r_3)
+            print(self.v_b, self.c_b, self.c_bbs, self.v, self.alpha, self.sigma)
 
         if output:
-            return [self.v_b, self.c_b, self.c_bbs, self.r_1, self.r_2, self.r_3]
+            return np.array([self.v_b, self.c_b, self.c_bbs, self.v, self.alpha, self.sigma],dtype=np.float64)

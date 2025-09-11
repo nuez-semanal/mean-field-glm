@@ -20,9 +20,9 @@ class NoiseComputer(AuxiliaryFunctions):
         cavity_projections = np.dot(self.model.data[:,cavity_indices],self.model.true_beta[cavity_indices])
 
         if self.model.log_likelihood == "Logistic":
-            cavity_obs = self.indicator(np.sqrt(self.model.snr)*cavity_projections-self.model.noise)
+            cavity_obs = self.indicator(cavity_projections-self.model.noise)
         else:
-            cavity_obs = np.sqrt(self.model.snr)*cavity_projections-self.model.noise
+            cavity_obs = cavity_projections-self.model.noise
 
         return cavity_obs
 
@@ -33,10 +33,10 @@ class NoiseComputer(AuxiliaryFunctions):
 
         if self.model.log_likelihood == "Logistic":
             for i in range(j):
-                pre_theta[:,i] = observations - self.sigmoid(np.sqrt(self.model.snr)*fitted_values[:,i])
+                pre_theta[:,i] = observations - self.sigmoid(fitted_values[:,i])
         else:
             for i in range(j):
-                pre_theta[:,i] = observations - np.sqrt(self.model.snr)*fitted_values[:,i]
+                pre_theta[:,i] = observations - fitted_values[:,i]
 
         return np.matmul(self.model.data[:,k],pre_theta)
 

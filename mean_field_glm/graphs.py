@@ -1,5 +1,6 @@
 import numpy as np
 from matplotlib import pyplot as plt
+import matplotlib as mpl
 from bayesian_glm.model import ModelGLM
 from mean_field_glm.marginal import MeanFieldMarginalGLM
 from mean_field_glm.block_beta_computation import BlockBetaComputation
@@ -15,9 +16,9 @@ class MseGraphGaussianCreator(BlockGaussianComputation):
     Parameters
     ----------
     var_list : list, optional
-        List of values for the variable of interest (e.g., kappa, snr). Default is [1.0].
+        List of values for the variable of interest (e.g., kappa, gamma). Default is [1.0].
     variable : str, optional
-        Name of the variable being varied (e.g., "kappa", "snr"). Default is "kappa".
+        Name of the variable being varied (e.g., "kappa", "gamma"). Default is "kappa".
     num_per_var : int, optional
         Number of samples per variable value. Default is 5.
     delta : float, optional
@@ -75,7 +76,7 @@ class MseGraphGaussianCreator(BlockGaussianComputation):
 
             for i in range(n_kappa):
                 block_data = self.data[i * self.num_per_var:(i + 1) * self.num_per_var, :]
-                self.stats[i, 0] = block_data[0, 1]  # kappa/snr value
+                self.stats[i, 0] = block_data[0, 1]  # kappa/gamma value
                 self.stats[i, 1] = np.mean(block_data[:, 4])  # mean of column 5 (c_b)
                 self.stats[i, 2] = np.std(block_data[:, 4])  # std deviation of column 5
                 self.stats[i, 3] = np.mean(block_data[:, 5])  # mean of column 6 (c_bbs)
@@ -88,7 +89,7 @@ class MseGraphGaussianCreator(BlockGaussianComputation):
 
     def plot_graph_mse(self, save=False):
         """
-        Plots the Mean Squared Error (MSE) graph as a function of kappa/snr.
+        Plots the Mean Squared Error (MSE) graph as a function of kappa/gamma.
 
         Parameters:
         - save (bool): If True, saves the plot and data to files (default: False).
@@ -152,7 +153,7 @@ class MseGraphBetaCreator(BlockBetaComputation):
     Parameters
     ----------
     var_list : list, optional
-        List of values for the variable of interest (e.g., kappa, snr). Default is [1.0].
+        List of values for the variable of interest (e.g., kappa, gamma). Default is [1.0].
     num_per_var : int, optional
         Number of samples per variable value. Default is 5.
     delta : float, optional
@@ -208,7 +209,7 @@ class MseGraphBetaCreator(BlockBetaComputation):
 
             for i in range(n_kappa):
                 block_data = self.data[i * self.num_per_var:(i + 1) * self.num_per_var, :]
-                self.stats[i, 0] = block_data[0, 1]  # kappa/snr value
+                self.stats[i, 0] = block_data[0, 1]  # kappa/gamma value
                 self.stats[i, 1] = np.mean(block_data[:, 4])  # mean of column 5 (c_b)
                 self.stats[i, 2] = np.std(block_data[:, 4])  # std deviation of column 5
                 self.stats[i, 3] = np.mean(block_data[:, 5])  # mean of column 6 (c_bbs)
@@ -221,7 +222,7 @@ class MseGraphBetaCreator(BlockBetaComputation):
 
     def plot_graph_mse(self, save=False):
         """
-        Plots the Mean Squared Error (MSE) graph as a function of kappa/snr.
+        Plots the Mean Squared Error (MSE) graph as a function of kappa/gamma.
 
         Parameters:
         - save (bool): If True, saves the plot and data to files (default: False).
@@ -273,14 +274,14 @@ class MseGraphBetaCreator(BlockBetaComputation):
         plt.show()
 
 class MarginalGraphCreator:
-    def __init__(self, n = 500, p = 500, k = 10, snr = 1.0, prior = "Normal", signal = "Normal",
+    def __init__(self, n = 500, p = 500, k = 10, gamma = 1.0, prior = "Normal", signal = "Normal",
                  log_likelihood = "Logistic", parameters = (0.173219994666055,0.173219994666055,0.416196903358369)):
-        self.snr = snr
+        self.gamma = gamma
         self.prior = prior
         self.parameters = parameters
         self.theoretical_model = self.theoretical_marginal = None
         self.empirical_marginal = self.true_beta = self.noise = None
-        self.model = ModelGLM(n = n, p = p, snr = snr,
+        self.model = ModelGLM(n = n, p = p, gamma = gamma,
                               prior = prior, signal = signal,
                               log_likelihood = log_likelihood)
         self.model.draw_sample()
@@ -303,7 +304,7 @@ class MarginalGraphCreator:
     def sample_theoretical_model(self):
         self.theoretical_model = MeanFieldMarginalGLM(parameters=self.parameters,
                                         prior=self.prior,
-                                        snr=self.snr,
+                                        gamma=self.gamma,
                                         betas=self.true_beta,
                                         noise=self.noise)
         self.theoretical_model.sample()
@@ -336,14 +337,37 @@ class MarginalGraphCreator:
         histogram_theo = np.histogram(self.theoretical_marginal, bins=bins_theo)
         frequency_theo = np.array(histogram_theo[0] / np.sum(histogram_theo[0])) / delta
 
-        plt.style.use('ggplot')
-        plt.figure(figsize=(8, 6))
+        mpl.rcParams.update({
+            "text.usetex": False,  # keep it lightweight
+            "mathtext.fontset": "cm",  # Computer Modern for math
+            "font.family": "serif",  # serif text
+            "font.size": 16,  # base font size
+            "axes.titlesize": 16,
+            "axes.labelsize": 16,
+            "xtick.labelsize": 16,
+            "ytick.labelsize": 16,
+            "legend.fontsize": 16,
+            "axes.linewidth": 1,  # thicker axes
+            "figure.dpi": 150,
+            "savefig.dpi": 600,  # high-res exports
+            "figure.constrained_layout.use": True  # tidy spacing
+        })
+
+        fig, ax = plt.subplots(figsize=(5, 5))
+
+        ax.set_xlabel(r"$\beta_{j_0}$", labelpad=6)
+        ax.set_ylabel("Density", labelpad=6)
+
+        ax.grid(which="major", linestyle="--", linewidth=0.6, alpha=0.4)
+        ax.grid(which="minor", linestyle=":", linewidth=0.4, alpha=0.3)
+        ax.minorticks_on()
+
+        ax.tick_params(which="both", direction="in")
+        ax.tick_params(which="major", length=6, width=1)
+        ax.tick_params(which="minor", length=3, width=0.8)
+
         plt.hist(self.empirical_marginal, bins=bins_emp, color='green', density=True)
         plt.plot(histogram_theo[1][1:n_bins_theo] - delta / 2, frequency_theo, color="blue")
-
-        plt.xlabel("Beta")
-        plt.ylabel("Density")
-        plt.grid(color='lightgray', linestyle='--', linewidth=0.5)
 
         plt.axvline(x=self.true_beta, color='red', linestyle='dashed', linewidth=2)
         plt.savefig("Marginal_comparison.png", dpi=1200)
@@ -353,15 +377,38 @@ class MarginalGraphCreator:
         quantiles_emp = self.compute_quantiles(self.empirical_marginal, 100)
         quantiles_theo = self.compute_quantiles(self.theoretical_marginal, 100)
 
-        plt.style.use('ggplot')
-        plt.figure(figsize=(8, 6))
+        mpl.rcParams.update({
+            "text.usetex": False,  # keep it lightweight
+            "mathtext.fontset": "cm",  # Computer Modern for math
+            "font.family": "serif",  # serif text
+            "font.size": 16,  # base font size
+            "axes.titlesize": 16,
+            "axes.labelsize": 16,
+            "xtick.labelsize": 16,
+            "ytick.labelsize": 16,
+            "legend.fontsize": 16,
+            "axes.linewidth": 1,  # thicker axes
+            "figure.dpi": 150,
+            "savefig.dpi": 600,  # high-res exports
+            "figure.constrained_layout.use": True  # tidy spacing
+        })
+
+        fig, ax = plt.subplots(figsize=(5, 5))
+
+        ax.set_xlabel("Empirical quantiles", labelpad=6)
+        ax.set_ylabel("Theoretical quantiles", labelpad=6)
+
+        ax.grid(which="major", linestyle="--", linewidth=0.6, alpha=0.4)
+        ax.grid(which="minor", linestyle=":", linewidth=0.4, alpha=0.3)
+        ax.minorticks_on()
+
+        ax.tick_params(which="both", direction="in")
+        ax.tick_params(which="major", length=6, width=1)
+        ax.tick_params(which="minor", length=3, width=0.8)
+
         plt.scatter(quantiles_emp[:99], quantiles_theo[:99],color="blue")
         plt.plot([np.min(quantiles_emp), np.max(quantiles_emp)], [np.min(quantiles_emp), np.max(quantiles_emp)],
                 color='red', linestyle='--')
-
-        plt.xlabel("Empirical quantiles")
-        plt.ylabel("Theoretical quantiles")
-        plt.grid(color='lightgray', linestyle='--', linewidth=0.5)
 
         plt.savefig("QQ plot.png", dpi=1200)
         plt.show()

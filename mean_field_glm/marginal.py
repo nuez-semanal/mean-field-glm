@@ -11,7 +11,7 @@ class MeanFieldMarginalGLM:
     - parameters (list): List of parameters [tr, ts, tt].
     - prior (str): Prior distribution for beta parameter ('Beta' or 'Normal').
     - betas (float): Scaling factor for the signal.
-    - snr (float): Signal-to-noise ratio.
+    - gamma (float): Signal-to-noise ratio.
     - p (int): Dimensionality of beta parameter (fixed at 1000).
     - marginal_sample (np.ndarray): Samples from the posterior distribution of beta.
     - seed (int): Random seed for reproducibility.
@@ -20,7 +20,7 @@ class MeanFieldMarginalGLM:
     - sample(draws=1000, tune=2000): Draws samples from marginal distribution.
     - plot_graph_marginals(): Plots the density of the sampled marginal data (beta parameter).
     """
-    def __init__(self, parameters: list, prior: str = "Normal", betas: float = 0.75, snr: float = 1.0, noise : float = None):
+    def __init__(self, parameters: list, prior: str = "Normal", betas: float = 0.75, gamma: float = 1.0, noise : float = None):
         """
         Initializes a MarginalGLM object.
 
@@ -28,12 +28,12 @@ class MeanFieldMarginalGLM:
         - parameters (list): List of parameters [tr, ts, tt].
         - prior (str): Prior distribution for beta parameter ('Beta' or 'Normal'). Default is 'Normal'.
         - betas (float): Signal to be used to compare with samples. Default is 0.75.
-        - snr (float): Signal-to-noise ratio. Default is 1.0.
+        - gamma (float): Signal-to-noise ratio. Default is 1.0.
         """
         self.parameters = parameters  # Parameters [r1, r2, r3]
         self.prior = prior  # Prior distribution for beta parameter
         self.betas = betas  # Signal to be used to compare with samples
-        self.snr = snr  # Signal-to-noise ratio
+        self.gamma = gamma  # Signal-to-noise ratio
         self.p = 1000  # Dimensionality of beta parameter (fixed at 1000)
 
         self.marginal_sample = None  # Placeholder for sampled marginal data
@@ -58,11 +58,11 @@ class MeanFieldMarginalGLM:
                 z = noise
 
             # Generate observations based on the chosen prior and parameters
-            observation = np.sqrt(snr) * ts / np.sqrt(tr) * betas + tt / np.sqrt(tr) * z
+            observation = gamma * ts / np.sqrt(tr) * betas + tt / np.sqrt(tr) * z
             observation = np.array([observation for i in range(self.p)])  # Repeat observation for each dimension
 
             # Likelihood of observations given beta
-            likelihood = pm.Normal("likelihood", mu = np.sqrt(snr * tr) * beta, sigma = 1.0, observed = observation)
+            likelihood = pm.Normal("likelihood", mu = np.sqrt(gamma * tr) * beta, sigma = 1.0, observed = observation)
 
     def sample(self):
         """

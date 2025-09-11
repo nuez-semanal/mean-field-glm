@@ -42,8 +42,6 @@ class MeanFieldBetaGLM(AuxiliaryFunctions):
         Distribution of the parameters to be inferred. Must be "Rademacher", "Normal", or "Beta". (Default: "Normal")
     prior : str, optional
         Prior distribution for the posterior. Must be "Normal" or "Beta". (Default: "Normal")
-    snr : float, optional
-        Signal-to-noise ratio of the obaervations. (Default: 1.0)
     delta : float, optional
         Smooth approximation parameter, only used for logistic regression. (Default: 0.01)
     seed : int, optional

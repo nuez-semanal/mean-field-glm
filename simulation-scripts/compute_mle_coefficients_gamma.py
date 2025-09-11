@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from mean_field_glm.mean_field_MLE import LogisticMeanFieldMLE
 
-gamma_list = [0.1,0.5,1.0,3.0,5.0,7.0,9.0]
+gamma_list = [1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0]
 
 solutions_stats = np.zeros([len(gamma_list),4])
 
