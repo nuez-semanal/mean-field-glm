@@ -1,5 +1,6 @@
 import numpy as np
 import pymc as pm
+from pymc.sampling.jax import sample_numpyro_nuts as jaxsample
 import sys
 import os
 
@@ -11,7 +12,7 @@ from bayesian_glm.noise import NoiseComputer
 
 class ModelGLM(AuxiliaryFunctions):
     def __init__(self, p=1000, n=1000, cores = 4, chains = 4, draws=1000, tune=2000, log_likelihood="Logistic", 
-                 signal="Normal", prior="Normal", gamma=1.0, sigma=1.0, seed=None):
+                 signal="Normal", prior="Normal", gamma=1.0, sigma=1.0, cuda = False, seed=None):
         self.p, self.n, self.cores, self.chains, self.draws = p, n, cores, chains, draws
         self.tune, self.log_likelihood, self.signal = tune, log_likelihood, signal
         self.prior, self.gamma, self.sigma = prior, gamma, sigma
@@ -25,7 +26,9 @@ class ModelGLM(AuxiliaryFunctions):
         np.random.seed(seed)
 
         self.data = np.random.normal(loc=0.0,scale=1/np.sqrt(n),size=[n, p])
+        self.posterior_mean = None
         self.log_likelihood = log_likelihood
+        self.cuda = cuda
 
         if signal == "Rademacher":
             self.true_beta = gamma * np.sign(2*np.random.random(p)-1)
@@ -78,7 +81,10 @@ class ModelGLM(AuxiliaryFunctions):
         with self.model:
             # I use MCMC to sample from the posterior distribution.
             # The default method in PyMC is a variant of Hamilotinian Monte Carlo called NUTS
-            self.sample = pm.sample(cores=self.cores, tune=self.tune, draws=self.draws) # Tune parameter fixes the steps before starting sampling
+            if self.cuda:
+                self.sample = jaxsample(tune=self.tune, draws=self.draws, chains = self.chains)
+            else:
+                self.sample = pm.sample(cores=self.cores, tune=self.tune, draws=self.draws, chains = self.chains) # Tune parameter fixes the steps before starting sampling
 
         # I extract from the InferenceData object an array containing the samples from the posterior
         self.posterior = np.array(self.sample["posterior"]["beta"][0])
@@ -102,6 +108,23 @@ class ModelGLM(AuxiliaryFunctions):
             c_bbs += np.dot(self.posterior[i],self.true_beta)/(self.draws*self.p)
 
         return v_b, c_b, c_bbs
+
+    def compute_posterior_mean(self):
+        self.check_if_sample()
+        self.posterior_mean = np.zeros(self.p)
+
+        for i in range(self.draws):
+            self.posterior_mean += self.posterior[i]/ self.draws
+
+    def compute_alpha_sigma(self):
+        self.compute_posterior_mean()
+        gamma_sq = np.mean(self.true_beta**2)
+        mse = np.mean((self.posterior_mean-self.true_beta)**2)
+        mean_norm = np.mean(self.posterior_mean**2)
+
+        alpha = 0.5 * (1 - (mse-mean_norm)/gamma_sq)
+        sigma = np.sqrt(mean_norm - gamma_sq * alpha**2)
+        return alpha, sigma
 
     def compute_hq(self):
         self.check_if_sample()

@@ -9,3 +9,4 @@ poetry.lock
 /simulation-results/.~lock.logistic_normal_normal_snr.csv#
 /simulation-results/.~lock.logistic_beta_beta_kappa.csv#
 /Demostration graphs/
+/simulation-scripts/test/
