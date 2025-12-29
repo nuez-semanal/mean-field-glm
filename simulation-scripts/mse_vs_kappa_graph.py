@@ -52,7 +52,7 @@ mse_poly = poly(kappa_fine)
 
 ax.plot(
     kappa_fine, mse_poly,
-    '--', color='red', linewidth=2, label='Smooth trend'
+    '--', color='red', linewidth=2
 )
 
 ax.grid(which="major", linestyle="--", linewidth=0.6, alpha=0.4)

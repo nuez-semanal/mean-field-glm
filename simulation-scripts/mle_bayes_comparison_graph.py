@@ -20,8 +20,6 @@ assert graph_type in ["alpha","sigma","mse","debiased"], "Nos valid type of grap
 file_path = "./simulation-results/comparison_mle_bayes_"+variable+".csv"
 data = np.loadtxt(file_path, delimiter=',',skiprows=1)
 
-variable_value = data[:,variable_map[variable]]
-
 mpl.rcParams.update({
     "text.usetex": False,                 # keep it lightweight
     "mathtext.fontset": "cm",             # Computer Modern for math
@@ -39,11 +37,13 @@ mpl.rcParams.update({
 })
 
 if data_map[graph_type] < 5:
+    variable_value = data[:, variable_map[variable]]
     data_mle = data[:,data_map[graph_type]]
     data_bayes = data[:,data_map[graph_type]+3]
 else:
-    data_mle = (data[:,3]/data[:,2])**2
-    data_bayes = (data[:, 6] / data[:, 5]) ** 2
+    variable_value = data[:-1, variable_map[variable]]
+    data_mle = (data[:-1,3]/data[:-1,2])**2
+    data_bayes = (data[:-1, 6] / data[:-1, 5]) ** 2
 
 if variable == "kappa":
     symbol2 = r"$\kappa$"
@@ -72,12 +72,12 @@ ax.tick_params(which="both", direction="in")
 ax.tick_params(which="major", length=6, width=1)
 ax.tick_params(which="minor", length=3, width=0.8)
 
-plt.xlim(np.min(data_bayes)-0.004, np.max(data_bayes)+0.03)
+plt.xlim(np.min(data_bayes)-0.05, np.max(data_bayes)+0.28)
 
 ax.scatter(data_bayes,data_mle,s=10, alpha=0.7)
 
 for i in range(len(variable_value)):
-    plt.text(data_bayes[i] + 0.0005, data_mle[i], symbol2+" = "+str(variable_value[i]))
+    plt.text(data_bayes[i] + 0.003, data_mle[i], symbol2+" = "+str(variable_value[i]))
 
 fname = f"comparison_mle_bayes_{graph_type}_{variable}.png"
 plt.savefig(fname, bbox_inches="tight", facecolor="white")
