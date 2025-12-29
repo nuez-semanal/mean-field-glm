@@ -1,15 +1,21 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import os
+
+os.chdir('..')
+
+current_dir = os.getcwd()
+print(f"Current directory: {current_dir}")
 
 variable_map = {"kappa": 0, "gamma": 1}
-data_map = {"alpha": 2, "sigma": 3, "mse": 4}
+data_map = {"alpha": 2, "sigma": 3, "mse": 4, "debiased": 5}
 
 variable = input("What varies? [kappa/gamma] ")
-graph_type = input("What type of graph? [alpha/sigma/mse] ")
+graph_type = input("What type of graph? [alpha/sigma/mse/debiased] ")
 
 assert variable in ["kappa","gamma"], "Not valid type of variable!"
-assert graph_type in ["alpha","sigma","mse"], "Nos valid type of graph!"
+assert graph_type in ["alpha","sigma","mse","debiased"], "Nos valid type of graph!"
 
 file_path = "./simulation-results/comparison_mle_bayes_"+variable+".csv"
 data = np.loadtxt(file_path, delimiter=',',skiprows=1)
@@ -32,8 +38,12 @@ mpl.rcParams.update({
     "figure.constrained_layout.use": True # tidy spacing
 })
 
-data_mle = data[:,data_map[graph_type]]
-data_bayes = data[:,data_map[graph_type]+3]
+if data_map[graph_type] < 5:
+    data_mle = data[:,data_map[graph_type]]
+    data_bayes = data[:,data_map[graph_type]+3]
+else:
+    data_mle = (data[:,3]/data[:,2])**2
+    data_bayes = (data[:, 6] / data[:, 5]) ** 2
 
 if variable == "kappa":
     symbol2 = r"$\kappa$"
@@ -44,6 +54,8 @@ if graph_type == "alpha":
     symbol1 = r"$\alpha$"
 elif graph_type == "sigma":
     symbol1 = r"$\sigma$"
+elif graph_type == "debiased":
+    symbol1 = r"$\left(\frac{\sigma}{\alpha}\right)^2$"
 else:
     symbol1 = "MSE"
 

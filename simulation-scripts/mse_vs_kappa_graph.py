@@ -1,43 +1,58 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from scipy.interpolate import make_smoothing_spline
+import os
+
+os.chdir("..")
 
 file_path = "./simulation-results/gauss_rademacher_mse_data.csv"
-data = np.loadtxt(file_path, delimiter=',',skiprows=1)
+data = np.loadtxt(file_path, delimiter=',', skiprows=1)
 
-kappa_values = np.linspace(0.1,1.0,10)
+kappa_values = np.linspace(0.1, 1.0, 10)
 
 mse_mcmc = data[:, 0]
-std_mcmc = data[:, 1]
+std_mcmc = data[:, 1]   # kept but not plotted
 mse_iter = data[:, 2]
-std_iter = data[:, 3]
+std_iter = data[:, 3]   # kept but not plotted
 
 mpl.rcParams.update({
-    "text.usetex": False,                 # keep it lightweight
-    "mathtext.fontset": "cm",             # Computer Modern for math
-    "font.family": "serif",               # serif text
-    "font.size": 16,                      # base font size
+    "text.usetex": False,
+    "mathtext.fontset": "cm",
+    "font.family": "serif",
+    "font.size": 16,
     "axes.titlesize": 16,
     "axes.labelsize": 16,
     "xtick.labelsize": 16,
     "ytick.labelsize": 16,
     "legend.fontsize": 16,
-    "axes.linewidth": 1,                  # thicker axes
+    "axes.linewidth": 1,
     "figure.dpi": 150,
-    "savefig.dpi": 600,                   # high-res exports
-    "figure.constrained_layout.use": True # tidy spacing
+    "savefig.dpi": 600,
+    "figure.constrained_layout.use": True
 })
 
-fig, ax = plt.subplots(figsize=(6,4))
+fig, ax = plt.subplots(figsize=(6, 4))
 
-ax.errorbar(
-    kappa_values, mse_iter, yerr=std_iter, fmt='o', color='tab:blue',
-    ecolor='lightblue', elinewidth=1.5, capsize=4, label='Fixed point equations'
+ax.plot(
+    kappa_values, mse_iter, 'o',
+    color='tab:blue', label='Fixed point equations'
 )
 
-ax.errorbar(
-    kappa_values, mse_mcmc, yerr=std_mcmc, fmt='s', color='tab:orange',
-    ecolor='peachpuff', elinewidth=1.5, capsize=4, label='MCMC'
+ax.plot(
+    kappa_values, mse_mcmc, 's',
+    color='tab:orange', label='MCMC'
+)
+
+poly_coeffs = np.polyfit(kappa_values, mse_iter, deg=2)
+poly = np.poly1d(poly_coeffs)
+
+kappa_fine = np.linspace(kappa_values.min(), kappa_values.max(), 300)
+mse_poly = poly(kappa_fine)
+
+ax.plot(
+    kappa_fine, mse_poly,
+    '--', color='red', linewidth=2, label='Smooth trend'
 )
 
 ax.grid(which="major", linestyle="--", linewidth=0.6, alpha=0.4)
@@ -50,23 +65,27 @@ ax.tick_params(which="minor", length=3, width=0.8)
 
 ax.legend()
 
-plt.ylim(0.6,1.0)
-
+plt.ylim(0.6, 1.0)
 plt.xlabel(r"$\kappa$")
 plt.ylabel("Mean Square Error")
 
 plt.savefig("mse_vs_kappa_gauss_rademacher.png", dpi=1200)
 
 
+fig, ax = plt.subplots(figsize=(6, 4))
 
-fig, ax = plt.subplots(figsize=(6,4))
 
-ax.errorbar(
-    kappa_values, mse_iter, yerr=std_iter, fmt='o', color='tab:blue',
-    ecolor='lightblue', elinewidth=1.5, capsize=4, label='sin(x)'
+ax.plot(
+    kappa_values, mse_iter, 'o',
+    color='tab:blue'
 )
 
-plt.ylim(0.8,0.86)
+ax.plot(
+    kappa_fine, mse_poly,
+    '--', color='red', linewidth=2
+)
+
+plt.ylim(0.8, 0.86)
 
 ax.grid(which="major", linestyle="--", linewidth=0.6, alpha=0.4)
 ax.grid(which="minor", linestyle=":",  linewidth=0.4, alpha=0.3)

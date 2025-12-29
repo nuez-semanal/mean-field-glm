@@ -55,7 +55,7 @@ class MeanFieldBetaGLM(AuxiliaryFunctions):
     """
     def __init__(self, p=1000, n=1000, kappa=None, cores = 4, chains = 4, draws=1000, tune=2000, tolerance=0.02,
                 max_it=7, v_b=1.0, c_b=0.0, c_bbs=0.0, r_1=1e-6, r_2=0.0, r_3=0.0,
-                delta=0.01, seed=None, bayes_optimal=False):
+                delta=0.001, seed=None, bayes_optimal=False):
         """
         Initialize the MeanFieldGLM class with the specified parameters.
         """
@@ -204,10 +204,10 @@ class MeanFieldBetaGLM(AuxiliaryFunctions):
             y = self.gauss_density(th) * np.multiply(self.dif_tilde_t_delta(c * th - e,self.delta), self.dif_sigmoid(e))
 
             # Integrate over e
-            slice_integrals.append(np.trapz(y, e))
+            slice_integrals.append(np.trapezoid(y, e))
 
         # Integrate over theta to get t_gamma
-        return np.trapz(slice_integrals, range_xth)
+        return np.trapezoid(slice_integrals, range_xth)
 
     def generate_thetas(self, xi_b, xi_bs, z_bbs):
         """

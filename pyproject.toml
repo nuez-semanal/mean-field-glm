@@ -14,6 +14,7 @@ matplotlib = "^3.9.2"
 ipython = "^8.29.0"
 gitpython = "^3.1.45"
 numpyro = "^0.19.0"
+scipy-stubs = "~=1.16.3"
 
 [build-system]
 requires = ["poetry-core"]
