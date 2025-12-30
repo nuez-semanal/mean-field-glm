@@ -1,6 +1,5 @@
 import numpy as np
 import pymc as pm
-from pymc.sampling.jax import sample_numpyro_nuts as jaxsample
 import sys
 import os
 
@@ -12,7 +11,7 @@ from bayesian_glm.noise import NoiseComputer
 
 class ModelGLM(AuxiliaryFunctions):
     def __init__(self, p=1000, n=1000, cores = 4, chains = 4, draws=1000, tune=2000, log_likelihood="Logistic", 
-                 signal="Normal", prior="Normal", gamma=1.0, sigma=1.0, cuda = False, seed=None):
+                 signal="Normal", prior="Normal", gamma=1.0, sigma=1.0, seed=None):
         self.p, self.n, self.cores, self.chains, self.draws = p, n, cores, chains, draws
         self.tune, self.log_likelihood, self.signal = tune, log_likelihood, signal
         self.prior, self.gamma, self.sigma = prior, gamma, sigma
@@ -28,7 +27,6 @@ class ModelGLM(AuxiliaryFunctions):
         self.data = np.random.normal(loc=0.0,scale=1/np.sqrt(n),size=[n, p])
         self.posterior_mean = None
         self.log_likelihood = log_likelihood
-        self.cuda = cuda
 
         if signal == "Rademacher":
             self.true_beta = gamma * np.sign(2*np.random.random(p)-1)
@@ -81,10 +79,7 @@ class ModelGLM(AuxiliaryFunctions):
         with self.model:
             # I use MCMC to sample from the posterior distribution.
             # The default method in PyMC is a variant of Hamilotinian Monte Carlo called NUTS
-            if self.cuda:
-                self.sample = jaxsample(tune=self.tune, draws=self.draws, chains = self.chains)
-            else:
-                self.sample = pm.sample(cores=self.cores, tune=self.tune, draws=self.draws, chains = self.chains) # Tune parameter fixes the steps before starting sampling
+            self.sample = pm.sample(cores=self.cores, tune=self.tune, draws=self.draws, chains = self.chains) # Tune parameter fixes the steps before starting sampling
 
         # I extract from the InferenceData object an array containing the samples from the posterior
         self.posterior = np.array(self.sample["posterior"]["beta"][0])
