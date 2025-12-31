@@ -24,6 +24,7 @@ Clone the repository:
    poetry install
    ```
    To handle dependencies, a poetry toml file is included in the repository.
+
 3. Once the environment is set, run in it with the command
    ```bash
    poetry shell
